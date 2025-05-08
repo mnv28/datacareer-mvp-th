@@ -22,24 +22,24 @@ const Footer = () => {
           </div>
           
           <div className="flex flex-wrap justify-center gap-x-8 gap-y-4">
-            <div className="w-32">
+            {/* <div className="w-32">
               <h3 className="text-sm font-semibold text-datacareer-darkBlue mb-2">Product</h3>
               <ul className="space-y-1">
                 <li><Link to="/" className="text-sm text-gray-500 hover:text-datacareer-orange">Questions</Link></li>
                 <li><Link to="/" className="text-sm text-gray-500 hover:text-datacareer-orange">Companies</Link></li>
                 <li><Link to="/" className="text-sm text-gray-500 hover:text-datacareer-orange">Solutions</Link></li>
               </ul>
-            </div>
+            </div> */}
             
-            <div className="w-32">
+            {/* <div className="w-32">
               <h3 className="text-sm font-semibold text-datacareer-darkBlue mb-2">Company</h3>
               <ul className="space-y-1">
                 <li><Link to="/" className="text-sm text-gray-500 hover:text-datacareer-orange">About</Link></li>
                 <li><Link to="/" className="text-sm text-gray-500 hover:text-datacareer-orange">Privacy</Link></li>
                 <li><Link to="/" className="text-sm text-gray-500 hover:text-datacareer-orange">Terms</Link></li>
               </ul>
-            </div>
-            
+            </div> */}
+{/*             
             <div className="w-32">
               <h3 className="text-sm font-semibold text-datacareer-darkBlue mb-2">Support</h3>
               <ul className="space-y-1">
@@ -47,12 +47,15 @@ const Footer = () => {
                 <li><Link to="/" className="text-sm text-gray-500 hover:text-datacareer-orange">Contact</Link></li>
                 <li><Link to="/" className="text-sm text-gray-500 hover:text-datacareer-orange">Feedback</Link></li>
               </ul>
-            </div>
+            </div> */}
           </div>
         </div>
         
         <div className="border-t border-gray-200 mt-8 pt-4 text-center text-xs text-gray-500">
           © {new Date().getFullYear()} Datacareer.app. All rights reserved.
+        </div>
+        <div className="border-gray-200 mt-2 pt-2 text-center text-xs text-gray-500">
+          This MVP Module is Designed and Developed with ❤️ by Techifyhouse.
         </div>
       </div>
     </footer>

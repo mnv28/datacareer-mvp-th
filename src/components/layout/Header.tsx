@@ -20,23 +20,23 @@ const Header = () => {
         
         <div className="hidden md:flex items-center space-x-1">
           <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue">
-            Questions
+            SQL Practice Questions
           </Button>
-          <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue">
+          {/* <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue">
             Companies
           </Button>
           <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue">
             About
-          </Button>
+          </Button> */}
         </div>
         
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue">
+          {/* <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue">
             Sign In
           </Button>
           <Button className="bg-datacareer-orange hover:bg-opacity-90 text-white">
             Sign Up
-          </Button>
+          </Button> */}
         </div>
       </div>
     </header>
