@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
@@ -8,6 +7,7 @@ import SqlEditor from '@/components/questions/SqlEditor';
 import SchemaDisplay from '@/components/questions/SchemaDisplay';
 import SolutionsDisplay from '@/components/questions/SolutionsDisplay';
 import SubmissionsDisplay from '@/components/questions/SubmissionsDisplay';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 
 // Mock data
 const mockQuestionDetails = {
@@ -241,20 +241,32 @@ const QuestionDetail = () => {
           nextId={question.nextId}
         />
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="lg:col-span-1">
-            <QuestionTabs
-              question={question.description}
-              schema={<SchemaDisplay tables={mockTables} />}
-              solutions={<SolutionsDisplay solutions={mockSolutions} />}
-              submissions={<SubmissionsDisplay submissions={mockSubmissions} />}
-            />
-          </div>
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="min-h-[500px] rounded-lg border"
+        >
+          {/* Question Content Panel */}
+          <ResizablePanel defaultSize={50} minSize={30}>
+            <div className="h-full">
+              <QuestionTabs
+                question={question.description}
+                schema={<SchemaDisplay tables={mockTables} />}
+                solutions={<SolutionsDisplay solutions={mockSolutions} />}
+                submissions={<SubmissionsDisplay submissions={mockSubmissions} />}
+              />
+            </div>
+          </ResizablePanel>
           
-          <div className="lg:col-span-1">
-            <SqlEditor />
-          </div>
-        </div>
+          {/* Resizable handle with visible grip */}
+          <ResizableHandle withHandle />
+          
+          {/* SQL Editor Panel */}
+          <ResizablePanel defaultSize={50} minSize={30}>
+            <div className="h-full">
+              <SqlEditor />
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </MainLayout>
   );
