@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { Progress } from "@/components/ui/progress";
+import { ChartContainer } from '@/components/ui/chart';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface ProgressSummaryProps {
   total: number;
@@ -27,6 +29,13 @@ const ProgressSummary: React.FC<ProgressSummaryProps> = ({
   const beginnerPercentage = beginner > 0 ? Math.round((beginnerSolved / beginner) * 100) : 0;
   const intermediatePercentage = intermediate > 0 ? Math.round((intermediateSolved / intermediate) * 100) : 0;
   const advancedPercentage = advanced > 0 ? Math.round((advancedSolved / advanced) * 100) : 0;
+  
+  // Data for progress chart
+  const difficultyData = [
+    { name: 'Beginner', total: beginner, solved: beginnerSolved, color: 'rgba(74, 222, 128, 0.8)' },
+    { name: 'Intermediate', total: intermediate, solved: intermediateSolved, color: 'rgba(250, 204, 21, 0.8)' },
+    { name: 'Advanced', total: advanced, solved: advancedSolved, color: 'rgba(248, 113, 113, 0.8)' },
+  ];
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-md">
@@ -39,6 +48,35 @@ const ProgressSummary: React.FC<ProgressSummaryProps> = ({
       
       <Progress value={solvedPercentage} className="h-2 mb-6" />
       
+      <div className="mb-6">
+        <div className="h-[220px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={difficultyData}
+              layout="vertical"
+              margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
+            >
+              <XAxis type="number" domain={[0, 'dataMax']} hide />
+              <YAxis dataKey="name" type="category" width={80} axisLine={false} tickLine={false} />
+              <Tooltip
+                formatter={(value, name) => [value, name === 'total' ? 'Total Questions' : 'Solved']}
+                labelFormatter={(label) => `${label} Difficulty`}
+              />
+              <Bar dataKey="total" name="Total Questions" radius={[0, 4, 4, 0]} barSize={12} fill="#e4e4e7">
+                {difficultyData.map((entry, index) => (
+                  <Cell key={`cell-total-${index}`} fill="#e4e4e7" />
+                ))}
+              </Bar>
+              <Bar dataKey="solved" name="Solved" radius={[0, 4, 4, 0]} barSize={12}>
+                {difficultyData.map((entry, index) => (
+                  <Cell key={`cell-solved-${index}`} fill={entry.color} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+      
       <div className="space-y-4">
         <div className="space-y-1">
           <div className="flex items-center justify-between">
@@ -48,7 +86,7 @@ const ProgressSummary: React.FC<ProgressSummaryProps> = ({
             </div>
             <span className="text-sm font-medium text-datacareer-darkBlue">{beginnerSolved} / {beginner}</span>
           </div>
-          <Progress value={beginnerPercentage} className="h-1.5 bg-gray-100" indicatorClassName="bg-difficulty-beginner" />
+          <Progress value={beginnerPercentage} className="h-1.5 bg-gray-100" />
         </div>
         
         <div className="space-y-1">
@@ -59,7 +97,7 @@ const ProgressSummary: React.FC<ProgressSummaryProps> = ({
             </div>
             <span className="text-sm font-medium text-datacareer-darkBlue">{intermediateSolved} / {intermediate}</span>
           </div>
-          <Progress value={intermediatePercentage} className="h-1.5 bg-gray-100" indicatorClassName="bg-difficulty-intermediate" />
+          <Progress value={intermediatePercentage} className="h-1.5 bg-gray-100" />
         </div>
         
         <div className="space-y-1">
@@ -70,7 +108,7 @@ const ProgressSummary: React.FC<ProgressSummaryProps> = ({
             </div>
             <span className="text-sm font-medium text-datacareer-darkBlue">{advancedSolved} / {advanced}</span>
           </div>
-          <Progress value={advancedPercentage} className="h-1.5 bg-gray-100" indicatorClassName="bg-difficulty-advanced" />
+          <Progress value={advancedPercentage} className="h-1.5 bg-gray-100" />
         </div>
       </div>
       
