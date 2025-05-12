@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,8 +8,8 @@ interface QuestionHeaderProps {
   company: string;
   topic: string;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-  previousId?: number;
-  nextId?: number;
+  previousId: number | null;
+  nextId: number | null;
 }
 
 const getDifficultyColor = (difficulty: string) => {
@@ -53,23 +52,29 @@ const QuestionHeader: React.FC<QuestionHeaderProps> = ({
         </div>
         
         <div className="flex items-center space-x-2 mt-4 md:mt-0">
-          {previousId !== undefined && (
-            <Link to={`/question/${previousId}`}>
-              <Button variant="outline" size="sm" className="flex items-center">
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Previous
-              </Button>
-            </Link>
-          )}
+          <Link to={previousId ? `/question/${previousId}` : '#'}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center"
+              disabled={!previousId}
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+          </Link>
           
-          {nextId !== undefined && (
-            <Link to={`/question/${nextId}`}>
-              <Button variant="outline" size="sm" className="flex items-center">
-                Next
-                <ArrowRight className="h-4 w-4 ml-1" />
-              </Button>
-            </Link>
-          )}
+          <Link to={nextId ? `/question/${nextId}` : '#'}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center"
+              disabled={!nextId}
+            >
+              Next
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

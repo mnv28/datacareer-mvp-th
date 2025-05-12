@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import FilterBar from '@/components/questions/FilterBar';
@@ -176,33 +175,44 @@ const calculateProgressData = (companies: typeof mockCompanies) => {
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [category, setCategory] = useState('all');
-  const [difficulty, setDifficulty] = useState('all');
-  const [status, setStatus] = useState('all');
+  const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
+  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
+  const [selectedVariants, setSelectedVariants] = useState<string[]>([]);
   
   // Apply filters
   const filteredCompanies = mockCompanies
     .map(company => {
-      // Filter questions based on search, category, difficulty and status
+      // Filter questions based on all filter criteria
       const filteredQuestions = company.questions.filter(question => {
         const matchesSearch = 
           searchQuery === '' || 
           question.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           company.name.toLowerCase().includes(searchQuery.toLowerCase());
           
-        const matchesCategory = 
-          category === 'all' || 
-          question.topic.toLowerCase().includes(category.toLowerCase());
+        const matchesCompany = 
+          selectedCompanies.length === 0 || 
+          selectedCompanies.includes(company.name);
+          
+        const matchesTopic = 
+          selectedTopics.length === 0 || 
+          selectedTopics.includes(question.topic);
+          
+        const matchesDomain = 
+          selectedDomains.length === 0 || 
+          selectedDomains.includes(company.domain);
           
         const matchesDifficulty = 
-          difficulty === 'all' || 
-          question.difficulty.toLowerCase() === difficulty.toLowerCase();
+          selectedDifficulties.length === 0 || 
+          selectedDifficulties.includes(question.difficulty);
           
-        const matchesStatus = 
-          status === 'all' || 
-          question.status.toLowerCase() === status.toLowerCase();
+        const matchesVariant = 
+          selectedVariants.length === 0 || 
+          selectedVariants.includes(question.type);
           
-        return matchesSearch && matchesCategory && matchesDifficulty && matchesStatus;
+        return matchesSearch && matchesCompany && matchesTopic && 
+               matchesDomain && matchesDifficulty && matchesVariant;
       });
       
       // Return the company with filtered questions
@@ -215,6 +225,14 @@ const Index = () => {
     .filter(company => company.questions.length > 0);
     
   const progressData = calculateProgressData(mockCompanies);
+
+  const handleClearAll = () => {
+    setSelectedCompanies([]);
+    setSelectedTopics([]);
+    setSelectedDomains([]);
+    setSelectedDifficulties([]);
+    setSelectedVariants([]);
+  };
 
   return (
     <MainLayout>
@@ -231,12 +249,17 @@ const Index = () => {
             <FilterBar
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
-              category={category}
-              setCategory={setCategory}
-              difficulty={difficulty}
-              setDifficulty={setDifficulty}
-              status={status}
-              setStatus={setStatus}
+              selectedCompanies={selectedCompanies}
+              setSelectedCompanies={setSelectedCompanies}
+              selectedTopics={selectedTopics}
+              setSelectedTopics={setSelectedTopics}
+              selectedDomains={selectedDomains}
+              setSelectedDomains={setSelectedDomains}
+              selectedDifficulties={selectedDifficulties}
+              setSelectedDifficulties={setSelectedDifficulties}
+              selectedVariants={selectedVariants}
+              setSelectedVariants={setSelectedVariants}
+              onClearAll={handleClearAll}
             />
             
             <QuestionList companies={filteredCompanies} />
