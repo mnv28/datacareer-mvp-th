@@ -5,7 +5,7 @@ import QuestionList from '@/components/questions/QuestionList';
 import ProgressSummary from '@/components/questions/ProgressSummary';
 
 // Mock data
-const mockCompanies = [
+export const mockCompanies = [
   {
     id: 1,
     name: 'Amazon',

@@ -12,7 +12,7 @@ interface QuestionHeaderProps {
   nextId: number | null;
 }
 
-const getDifficultyColor = (difficulty: string) => {
+const getDifficultyColor = (difficulty: QuestionHeaderProps['difficulty']) => {
   switch (difficulty) {
     case 'Beginner':
       return 'text-difficulty-beginner';
@@ -20,8 +20,6 @@ const getDifficultyColor = (difficulty: string) => {
       return 'text-difficulty-intermediate';
     case 'Advanced':
       return 'text-difficulty-advanced';
-    default:
-      return 'text-gray-800';
   }
 };
 

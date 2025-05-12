@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Check, X, Minus } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { CompanyLogo } from '@/components/CompanyLogo';
 
 interface Question {
   id: number;
@@ -24,29 +24,25 @@ interface QuestionListProps {
   companies: Company[];
 }
 
-const getStatusIcon = (status: string) => {
+const getStatusIcon = (status: Question['status']) => {
   switch (status) {
     case 'Solved':
-      return <Check className="h-4 w-4 text-status-solved" />;
+      return <Check className="h-4 w-4 text-green-500" />;
     case 'Wrong':
-      return <X className="h-4 w-4 text-status-wrong" />;
+      return <X className="h-4 w-4 text-red-500" />;
     case 'Unattempted':
-      return <Minus className="h-4 w-4 text-status-unattempted" />;
-    default:
-      return <Minus className="h-4 w-4 text-status-unattempted" />;
+      return <Minus className="h-4 w-4 text-gray-400" />;
   }
 };
 
-const getDifficultyBadgeClass = (difficulty: string) => {
+const getDifficultyBadgeClass = (difficulty: Question['difficulty']) => {
   switch (difficulty) {
     case 'Beginner':
-      return 'bg-difficulty-beginner/10 text-difficulty-beginner border-difficulty-beginner/30';
+      return 'border-green-200 bg-green-50 text-green-700';
     case 'Intermediate':
-      return 'bg-difficulty-intermediate/10 text-difficulty-intermediate border-difficulty-intermediate/30';
+      return 'border-yellow-200 bg-yellow-50 text-yellow-700';
     case 'Advanced':
-      return 'bg-difficulty-advanced/10 text-difficulty-advanced border-difficulty-advanced/30';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
+      return 'border-red-200 bg-red-50 text-red-700';
   }
 };
 
@@ -60,13 +56,19 @@ const QuestionList: React.FC<QuestionListProps> = ({ companies }) => {
             value={`company-${company.id}`}
             className="border-b last:border-b-0"
           >
-            <AccordionTrigger className="px-4 py-3 hover:bg-gray-50 transition-all">
+            <AccordionTrigger 
+              className="px-4 py-3 hover:bg-gray-50 transition-all"
+              indicator={<ChevronDown className="h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200" />}
+            >
               <div className="flex flex-col md:flex-row md:items-center justify-between w-full text-left">
-                <div className="flex items-center space-x-2">
-                  <span className="font-medium text-datacareer-darkBlue">{company.name}</span>
-                  <span className="text-xs bg-datacareer-skyBlue/20 text-datacareer-blue px-2 py-0.5 rounded-full">
-                    {company.questions.length} questions
-                  </span>
+                <div className="flex items-center space-x-3">
+                  <CompanyLogo name={company.name} size="sm" />
+                  <div>
+                    <span className="font-medium text-datacareer-darkBlue">{company.name}</span>
+                    <span className="text-xs bg-datacareer-skyBlue/20 text-datacareer-blue px-2 py-0.5 rounded-full ml-2">
+                      {company.questions.length} questions
+                    </span>
+                  </div>
                 </div>
                 <div className="flex items-center mt-1 md:mt-0">
                   <span className="text-xs text-gray-500 mr-3">{company.domain}</span>
@@ -76,7 +78,7 @@ const QuestionList: React.FC<QuestionListProps> = ({ companies }) => {
                 </div>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="pt-1 pb-1">
+            <AccordionContent>
               <div className="divide-y divide-gray-100">
                 {company.questions.map((question) => (
                   <Link

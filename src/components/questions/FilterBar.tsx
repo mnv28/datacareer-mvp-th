@@ -159,8 +159,8 @@ const FilterBar: React.FC<FilterBarProps> = ({
             className="pl-9 h-10"
           />
         </div>
-      </div>
-
+        </div>
+        
       {/* Filter Summary */}
       {(selectedCompanies.length > 0 || selectedTopics.length > 0 || 
         selectedDomains.length > 0 || selectedDifficulties.length > 0 || 
