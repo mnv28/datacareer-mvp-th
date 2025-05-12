@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp, Check, X, Minus } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CompanyLogo } from '@/components/CompanyLogo';
+import './QuestionList.css';
 
 interface Question {
   id: number;
@@ -11,12 +12,13 @@ interface Question {
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   status: 'Solved' | 'Wrong' | 'Unattempted';
   topic: string;
+  isPaid: boolean;
 }
 
 interface Company {
   id: number;
   name: string;
-  domain: string;
+  domains: string[];
   questions: Question[];
 }
 
@@ -58,21 +60,28 @@ const QuestionList: React.FC<QuestionListProps> = ({ companies }) => {
           >
             <AccordionTrigger 
               className="px-4 py-3 hover:bg-gray-50 transition-all"
-              indicator={<ChevronDown className="h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200" />}
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between w-full text-left">
                 <div className="flex items-center space-x-3">
                   <CompanyLogo name={company.name} size="sm" />
                   <div>
-                    <span className="font-medium text-datacareer-darkBlue">{company.name}</span>
-                    <span className="text-xs bg-datacareer-skyBlue/20 text-datacareer-blue px-2 py-0.5 rounded-full ml-2">
+                    <span className="font-medium text-datacareer-darkBlue hover:text-datacareer-orange company-name">
+                      {company.name}
+                    </span>
+                    <span className="text-xs bg-datacareer-skyBlue/20 text-datacareer-blue px-2 py-0.5 rounded-full ml-2 no-underline hover:no-underline decoration-none hover:decoration-none">
                       {company.questions.length} questions
                     </span>
                   </div>
                 </div>
                 <div className="flex items-center mt-1 md:mt-0">
-                  <span className="text-xs text-gray-500 mr-3">{company.domain}</span>
-                  <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full">
+                  <div className="flex flex-wrap gap-1 mr-3">
+                    {company.domains.map((domain, index) => (
+                      <span key={index} className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full no-underline hover:no-underline decoration-none hover:decoration-none domain-badge">
+                        {domain}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full no-underline hover:no-underline decoration-none hover:decoration-none">
                     {company.questions.filter(q => q.status === 'Solved').length} solved
                   </span>
                 </div>
@@ -104,6 +113,12 @@ const QuestionList: React.FC<QuestionListProps> = ({ companies }) => {
                       <span className={`text-xs px-2 py-0.5 border rounded ${getDifficultyBadgeClass(question.difficulty)}`}>
                         {question.difficulty}
                       </span>
+                      {/* Paid/Free badge */}
+                      {question.isPaid ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300 font-semibold ml-2">Paid</span>
+                      ) : (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 border border-green-300 font-semibold ml-2">Free</span>
+                      )}
                     </div>
                   </Link>
                 ))}

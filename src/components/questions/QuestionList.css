@@ -1,0 +1,8 @@
+.accordion-trigger *:not(.company-name) {
+  text-decoration: none !important;
+  -webkit-text-decoration: none !important;
+}
+
+.accordion-trigger .company-name {
+  text-decoration: underline;
+} 

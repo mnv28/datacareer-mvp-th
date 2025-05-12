@@ -18,55 +18,63 @@ interface Question {
   status: 'Solved' | 'Wrong' | 'Unattempted';
   topic: string;
   company: string;
-  description: string;
+  description: React.ReactNode;
 }
 
-// Mock data
+const customersTable = [
+  {
+    name: "customers",
+    columns: [
+      { name: "customer_id", type: "INT", constraint: "Unique identifier for each customer" },
+      { name: "name", type: "VARCHAR", constraint: "Customer name" },
+      { name: "email", type: "VARCHAR", constraint: "Customer email" },
+      { name: "join_date", type: "DATE", constraint: "Date the customer joined" },
+    ],
+  }
+];
+
+const ordersTable = [
+  {
+    name: "orders",
+    columns: [
+      { name: "order_id", type: "INT", constraint: "Unique identifier for each order" },
+      { name: "customer_id", type: "INT", constraint: "Foreign key to customers table" },
+      { name: "order_date", type: "DATE", constraint: "Date the order was placed" },
+      { name: "total_amount", type: "DECIMAL", constraint: "Total order amount" },
+    ],
+  }
+];
+
 const mockQuestionDetails = {
   id: 101,
   title: "Customer Order Analysis",
   company: "Amazon",
   topic: "Data Analysis",
   difficulty: "Intermediate" as const,
-  description: `
-    <h2>Problem Statement</h2>
-    <p>Amazon has a large customer database and wants to analyze their customer order patterns. 
-    Write a SQL query to find the top 5 customers who spent the most in 2022, along with their total order count and average order value.</p>
-    
-    <h3>Input Tables</h3>
-    <ol>
-      <li>
-        <strong>customers</strong> table:
-        <ul>
-          <li>customer_id (INT): Unique identifier for each customer</li>
-          <li>name (VARCHAR): Customer name</li>
-          <li>email (VARCHAR): Customer email</li>
-          <li>join_date (DATE): Date the customer joined</li>
-        </ul>
-      </li>
-      <li>
-        <strong>orders</strong> table:
-        <ul>
-          <li>order_id (INT): Unique identifier for each order</li>
-          <li>customer_id (INT): Foreign key to customers table</li>
-          <li>order_date (DATE): Date the order was placed</li>
-          <li>total_amount (DECIMAL): Total order amount</li>
-        </ul>
-      </li>
-    </ol>
-    
-    <h3>Expected Output</h3>
-    <p>Your query should return the following columns:</p>
-    <ul>
-      <li>customer_id</li>
-      <li>customer_name</li>
-      <li>total_spent (the sum of total_amount for all orders in 2022)</li>
-      <li>order_count (the number of orders in 2022)</li>
-      <li>avg_order_value (the average order amount)</li>
-    </ul>
-    
-    <p>Results should be ordered by total_spent in descending order, and only the top 5 customers should be returned.</p>
-  `,
+  description: (
+    <>
+      <h2 className="font-bold text-lg mb-2">Problem Statement</h2>
+      <p>
+        Amazon has a large customer database and wants to analyze their customer order patterns.
+        Write a SQL query to find the top 5 customers who spent the most in 2022, along with their total order count and average order value.
+      </p>
+      <h3 className="font-bold text-base mt-4 mb-2">Input Tables</h3>
+      <div className="font-bold">customers table</div>
+      <SchemaDisplay tables={customersTable} />
+      <div className="font-bold mt-4">orders table</div>
+      <SchemaDisplay tables={ordersTable} />
+      <h3 className="font-bold text-base mt-4 mb-2">Expected Output</h3>
+      <p>Your query should return the following columns:</p>
+      <ul className="list-disc ml-6">
+        <li>customer_id</li>
+        <li>customer_name</li>
+        <li>total_spent (the sum of total_amount for all orders in 2022)</li>
+        <li>order_count (the number of orders in 2022)</li>
+        <li>avg_order_value (the average order amount)</li>
+      </ul>
+      <p>Results should be ordered by total_spent in descending order, and only the top 5 customers should be returned.</p>
+    </>
+  ),
   previousId: null,
   nextId: 102,
 };
@@ -92,62 +100,20 @@ const mockTables = [
   }
 ];
 
-const mockSolutions = [
-  {
-    id: 1,
-    author: "SQLMaster42",
-    description: "This solution uses a simple JOIN and GROUP BY to calculate the required metrics.",
-    code: `SELECT c.customer_id, c.name as customer_name, 
-  SUM(o.total_amount) as total_spent,
-  COUNT(o.order_id) as order_count,
-  AVG(o.total_amount) as avg_order_value
-FROM customers c
-JOIN orders o ON c.customer_id = o.customer_id
-WHERE YEAR(o.order_date) = 2022
-GROUP BY c.customer_id, c.name
-ORDER BY total_spent DESC
-LIMIT 5;`,
-    db: "MySQL" as const,
-    votes: 25
-  },
-  {
-    id: 2,
-    author: "DataWizard",
-    description: "An optimized solution that performs well on large datasets by using window functions.",
-    code: `WITH customer_metrics AS (
-  SELECT c.customer_id, c.name as customer_name,
-    SUM(o.total_amount) as total_spent,
-    COUNT(o.order_id) as order_count,
-    AVG(o.total_amount) as avg_order_value
-  FROM customers c
-  JOIN orders o ON c.customer_id = o.customer_id
-  WHERE o.order_date BETWEEN '2022-01-01' AND '2022-12-31'
-  GROUP BY c.customer_id, c.name
-)
-SELECT * FROM customer_metrics
-ORDER BY total_spent DESC
-LIMIT 5;`,
-    db: "MySQL" as const,
-    votes: 18
-  },
-  {
-    id: 3,
-    author: "PGAdmin",
-    description: "PostgreSQL solution using date_part function instead of YEAR.",
-    code: `SELECT c.customer_id, c.name as customer_name, 
-  SUM(o.total_amount) as total_spent,
-  COUNT(o.order_id) as order_count,
-  AVG(o.total_amount) as avg_order_value
-FROM customers c
-JOIN orders o ON c.customer_id = o.customer_id
-WHERE date_part('year', o.order_date) = 2022
-GROUP BY c.customer_id, c.name
-ORDER BY total_spent DESC
-LIMIT 5;`,
-    db: "PostgreSQL" as const,
-    votes: 12
-  }
-];
+const mockSolutions = `
+**Redeemed point distribution**
+
+1. **Check the Data:**  
+   Ensure the dataset contains redemption types and the number of points redeemed.
+2. **Group by Redemption Type:**  
+   Organise the data based on different redemption categories (donation, fuel discount, Qantas points, shopping discount).
+3. **Sum the Points:**  
+   Calculate the total number of points redeemed for each redemption type.
+4. **Handle Missing Data:**  
+   Ensure all redemption types are included, even if some have zero points.
+5. **Sort if Needed:**  
+   Arrange the results in a meaningful order, such as by highest to lowest points redeemed.
+`;
 
 const mockSubmissions = [
   {
@@ -235,7 +201,7 @@ const findQuestionDetails = (questionId: number): Question | null => {
       return {
         ...question,
         company: company.name,
-        description: mockQuestionDetails.description, // Using mock description for now
+        description: mockQuestionDetails.description, // Using JSX description
       };
     }
   }
@@ -309,7 +275,7 @@ const QuestionDetail = () => {
               <QuestionTabs
                 question={question.description}
                 schema={<SchemaDisplay tables={mockTables} />}
-                solutions={<SolutionsDisplay solutions={mockSolutions} />}
+                solutions={<SolutionsDisplay solution={mockSolutions} />}
                 submissions={<SubmissionsDisplay submissions={mockSubmissions} />}
               />
             </div>

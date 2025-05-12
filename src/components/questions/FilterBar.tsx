@@ -41,7 +41,21 @@ const FilterBar: React.FC<FilterBarProps> = ({
   // Mock data - replace with actual data from your backend
   const companies = ['Amazon', 'Google', 'Microsoft', 'Meta', 'Apple'];
   const topics = ['Data Analysis', 'Data Manipulation', 'Window Functions', 'Joins', 'Subqueries'];
-  const domains = ['E-Commerce', 'Technology', 'Finance', 'Healthcare', 'Education'];
+  const domains = [
+    'E-Commerce',
+    'Cloud Computing',
+    'Retail Analytics',
+    'Customer Analytics',
+    'Technology',
+    'Search Analytics',
+    'AI/ML',
+    'Enterprise Software',
+    'Gaming Analytics',
+    'Social Media',
+    'Digital Advertising',
+    'User Analytics',
+    'Content Moderation'
+  ];
   const difficulties = ['Beginner', 'Intermediate', 'Advanced'];
   const variants = ['SQL', 'Python', 'PostgreSQL', 'MySQL'];
 

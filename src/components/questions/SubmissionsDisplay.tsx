@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface Submission {
@@ -90,9 +89,25 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
                 </div>
                 
                 <div className="mt-4">
-                  <div className="text-xs text-gray-500 mb-1">SQL Query</div>
+                  <div className="text-xs text-gray-500 mb-1">Solution</div>
                   <div className="bg-gray-50 border rounded-md p-3 overflow-x-auto">
                     <pre className="text-xs font-mono text-gray-800">{selectedSubmission.query}</pre>
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <div className="text-xs text-gray-500 mb-1 font-semibold">Expected Output</div>
+                  <div className="bg-gray-50 border rounded-md p-3 overflow-x-auto">
+                    <pre className="text-xs font-mono text-gray-800">
+customer_id, customer_name, total_spent, order_count, avg_order_value
+                    </pre>
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <div className="text-xs text-gray-500 mb-1 font-semibold">Your Output</div>
+                  <div className="bg-gray-50 border rounded-md p-3 overflow-x-auto">
+                    <pre className="text-xs font-mono text-gray-800">
+-- Your output will be shown here after running the query --
+                    </pre>
                   </div>
                 </div>
               </div>

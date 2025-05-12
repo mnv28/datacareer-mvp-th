@@ -1,8 +1,8 @@
-
 import React, { useState, useRef } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+// import { Textarea } from "@/components/ui/textarea";
+import MonacoEditor from '@monaco-editor/react';
 
 interface SqlEditorProps {
   defaultQuery?: string;
@@ -112,27 +112,34 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
           disabled={isExecuting}
           className="bg-datacareer-blue hover:bg-datacareer-darkBlue"
         >
-          {isExecuting ? 'Running...' : 'Run Query'}
+          {isExecuting ? 'Running...' : 'Submit'}
         </Button>
       </div>
-      
       <div className="flex flex-col">
         <div ref={editorRef} className="h-64">
-          <Textarea
+          <MonacoEditor
+            height="100%"
+            defaultLanguage={dbType === 'postgresql' ? 'pgsql' : 'sql'}
+            language={dbType === 'postgresql' ? 'pgsql' : 'sql'}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="sql-editor w-full h-full p-4 text-sm border-0 rounded-none resize-none font-mono"
-            placeholder="Write your SQL query here..."
+            onChange={value => setQuery(value || '')}
+            options={{
+              fontSize: 14,
+              minimap: { enabled: false },
+              lineNumbers: 'on',
+              scrollBeyondLastLine: false,
+              wordWrap: 'on',
+              theme: 'vs',
+              automaticLayout: true,
+            }}
           />
         </div>
-        
         <div 
           ref={resizerRef}
           className="h-2 bg-gray-100 border-y border-gray-200 cursor-row-resize flex items-center justify-center"
         >
           <div className="w-8 h-1 bg-gray-300 rounded"></div>
         </div>
-        
         <div ref={resultsRef} className="h-64 overflow-auto">
           {error ? (
             <div className="p-4 bg-red-50 text-red-800 border-l-4 border-red-500">

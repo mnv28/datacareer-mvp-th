@@ -4,12 +4,29 @@ import FilterBar from '@/components/questions/FilterBar';
 import QuestionList from '@/components/questions/QuestionList';
 import ProgressSummary from '@/components/questions/ProgressSummary';
 
+interface Question {
+  id: number;
+  title: string;
+  type: 'SQL' | 'PostgreSQL';
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  status: 'Solved' | 'Wrong' | 'Unattempted';
+  topic: string;
+  isPaid: boolean;
+}
+
+interface Company {
+  id: number;
+  name: string;
+  domains: string[];
+  questions: Question[];
+}
+
 // Mock data
 export const mockCompanies = [
   {
     id: 1,
     name: 'Amazon',
-    domain: 'E-Commerce',
+    domains: ['E-Commerce', 'Cloud Computing', 'Retail Analytics', 'Customer Analytics'],
     questions: [
       {
         id: 101,
@@ -17,7 +34,8 @@ export const mockCompanies = [
         type: 'SQL' as const,
         difficulty: 'Intermediate' as const,
         status: 'Solved' as const,
-        topic: 'Data Analysis'
+        topic: 'Data Analysis',
+        isPaid: false
       },
       {
         id: 102,
@@ -25,7 +43,8 @@ export const mockCompanies = [
         type: 'PostgreSQL' as const,
         difficulty: 'Advanced' as const,
         status: 'Unattempted' as const,
-        topic: 'Window Functions'
+        topic: 'Window Functions',
+        isPaid: true
       },
       {
         id: 103,
@@ -33,14 +52,15 @@ export const mockCompanies = [
         type: 'SQL' as const,
         difficulty: 'Beginner' as const,
         status: 'Wrong' as const,
-        topic: 'Joins'
+        topic: 'Joins',
+        isPaid: false
       }
     ]
   },
   {
     id: 2,
     name: 'Google',
-    domain: 'Technology',
+    domains: ['Technology', 'Search Analytics', 'Cloud Computing', 'AI/ML'],
     questions: [
       {
         id: 201,
@@ -48,7 +68,8 @@ export const mockCompanies = [
         type: 'SQL' as const,
         difficulty: 'Advanced' as const,
         status: 'Unattempted' as const,
-        topic: 'Window Functions'
+        topic: 'Window Functions',
+        isPaid: true
       },
       {
         id: 202,
@@ -56,14 +77,15 @@ export const mockCompanies = [
         type: 'SQL' as const,
         difficulty: 'Intermediate' as const,
         status: 'Solved' as const,
-        topic: 'Data Analysis'
+        topic: 'Data Analysis',
+        isPaid: false
       }
     ]
   },
   {
     id: 3,
     name: 'Microsoft',
-    domain: 'Technology',
+    domains: ['Technology', 'Cloud Computing', 'Enterprise Software', 'Gaming Analytics'],
     questions: [
       {
         id: 301,
@@ -71,7 +93,8 @@ export const mockCompanies = [
         type: 'PostgreSQL' as const,
         difficulty: 'Intermediate' as const,
         status: 'Unattempted' as const,
-        topic: 'Data Analysis'
+        topic: 'Data Analysis',
+        isPaid: false
       },
       {
         id: 302,
@@ -79,7 +102,8 @@ export const mockCompanies = [
         type: 'SQL' as const,
         difficulty: 'Beginner' as const,
         status: 'Solved' as const,
-        topic: 'Joins'
+        topic: 'Joins',
+        isPaid: true
       },
       {
         id: 303,
@@ -87,14 +111,15 @@ export const mockCompanies = [
         type: 'SQL' as const,
         difficulty: 'Beginner' as const,
         status: 'Solved' as const,
-        topic: 'Data Manipulation'
+        topic: 'Data Manipulation',
+        isPaid: false
       }
     ]
   },
   {
     id: 4,
     name: 'Meta',
-    domain: 'Social Media',
+    domains: ['Social Media', 'Digital Advertising', 'User Analytics', 'Content Moderation'],
     questions: [
       {
         id: 401,
@@ -102,7 +127,8 @@ export const mockCompanies = [
         type: 'SQL' as const,
         difficulty: 'Advanced' as const,
         status: 'Wrong' as const,
-        topic: 'Graph Analysis'
+        topic: 'Graph Analysis',
+        isPaid: true
       },
       {
         id: 402,
@@ -110,7 +136,8 @@ export const mockCompanies = [
         type: 'PostgreSQL' as const,
         difficulty: 'Intermediate' as const,
         status: 'Solved' as const,
-        topic: 'Data Analysis'
+        topic: 'Data Analysis',
+        isPaid: false
       },
       {
         id: 403,
@@ -118,7 +145,8 @@ export const mockCompanies = [
         type: 'SQL' as const,
         difficulty: 'Intermediate' as const,
         status: 'Unattempted' as const,
-        topic: 'Data Analysis'
+        topic: 'Data Analysis',
+        isPaid: false
       },
       {
         id: 404,
@@ -126,7 +154,8 @@ export const mockCompanies = [
         type: 'SQL' as const,
         difficulty: 'Beginner' as const,
         status: 'Solved' as const,
-        topic: 'Data Manipulation'
+        topic: 'Data Manipulation',
+        isPaid: true
       }
     ]
   }
@@ -201,7 +230,7 @@ const Index = () => {
           
         const matchesDomain = 
           selectedDomains.length === 0 || 
-          selectedDomains.includes(company.domain);
+          company.domains.some(domain => selectedDomains.includes(domain));
           
         const matchesDifficulty = 
           selectedDifficulties.length === 0 || 

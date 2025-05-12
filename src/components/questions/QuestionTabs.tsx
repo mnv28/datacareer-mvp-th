@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface QuestionTabsProps {
-  question: string;
+  question: React.ReactNode;
   schema: React.ReactNode;
   solutions: React.ReactNode;
   submissions: React.ReactNode;
@@ -47,7 +46,9 @@ const QuestionTabs: React.FC<QuestionTabsProps> = ({
       </div>
       
       <TabsContent value="question" className="p-4 focus:outline-none">
-        <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: question }} />
+        <div className="prose max-w-none">
+          {question}
+        </div>
       </TabsContent>
       
       <TabsContent value="schema" className="p-4 focus:outline-none">
