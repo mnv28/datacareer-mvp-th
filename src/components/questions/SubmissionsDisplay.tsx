@@ -88,12 +88,6 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
                   </div>
                 </div>
                 
-                <div className="mt-4">
-                  <div className="text-xs text-gray-500 mb-1">Solution</div>
-                  <div className="bg-gray-50 border rounded-md p-3 overflow-x-auto">
-                    <pre className="text-xs font-mono text-gray-800">{selectedSubmission.query}</pre>
-                  </div>
-                </div>
                 <div className="mt-6">
                   <div className="text-xs text-gray-500 mb-1 font-semibold">Expected Output</div>
                   <div className="bg-gray-50 border rounded-md p-3 overflow-x-auto">
