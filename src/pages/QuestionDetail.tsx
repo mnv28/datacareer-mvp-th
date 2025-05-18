@@ -18,7 +18,7 @@ interface Question {
   status: 'Solved' | 'Wrong' | 'Unattempted';
   topic: string;
   company: string;
-  description: React.ReactNode;
+  description: string;
 }
 
 const customersTable = [
@@ -51,30 +51,22 @@ const mockQuestionDetails = {
   company: "Amazon",
   topic: "Data Analysis",
   difficulty: "Intermediate" as const,
-  description: (
-    <>
-      <h2 className="font-bold text-lg mb-2">Problem Statement</h2>
-      <p>
-        Amazon has a large customer database and wants to analyze their customer order patterns.
-        Write a SQL query to find the top 5 customers who spent the most in 2022, along with their total order count and average order value.
-      </p>
-      <h3 className="font-bold text-base mt-4 mb-2">Input Tables</h3>
-      <div className="font-bold">customers table</div>
-      <SchemaDisplay tables={customersTable} />
-      <div className="font-bold mt-4">orders table</div>
-      <SchemaDisplay tables={ordersTable} />
-      <h3 className="font-bold text-base mt-4 mb-2">Expected Output</h3>
-      <p>Your query should return the following columns:</p>
-      <ul className="list-disc ml-6">
-        <li>customer_id</li>
-        <li>customer_name</li>
-        <li>total_spent (the sum of total_amount for all orders in 2022)</li>
-        <li>order_count (the number of orders in 2022)</li>
-        <li>avg_order_value (the average order amount)</li>
-      </ul>
-      <p>Results should be ordered by total_spent in descending order, and only the top 5 customers should be returned.</p>
-    </>
-  ),
+  description: `<h2>Problem Statement</h2>
+<p>Amazon has a large customer database and wants to analyze their customer order patterns.
+Write a SQL query to find the top 5 customers who spent the most in 2022, along with their total order count and average order value.</p>
+<h3>Input Tables</h3>
+<div class="font-bold">customers table</div>
+<div class="font-bold mt-4">orders table</div>
+<h3>Expected Output</h3>
+<p>Your query should return the following columns:</p>
+<ul>
+  <li>customer_id</li>
+  <li>customer_name</li>
+  <li>total_spent (the sum of total_amount for all orders in 2022)</li>
+  <li>order_count (the number of orders in 2022)</li>
+  <li>avg_order_value (the average order amount)</li>
+</ul>
+<p>Results should be ordered by total_spent in descending order, and only the top 5 customers should be returned.</p>`,
   previousId: null,
   nextId: 102,
 };
@@ -213,6 +205,8 @@ const QuestionDetail = () => {
   const [question, setQuestion] = useState<Question | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [adjacentIds, setAdjacentIds] = useState<{ previousId: number | null; nextId: number | null }>({ previousId: null, nextId: null });
+  const [activeTab, setActiveTab] = useState<string>("question");
+  const [submissions, setSubmissions] = useState(mockSubmissions);
 
   useEffect(() => {
     // Simulate API fetch
@@ -224,6 +218,23 @@ const QuestionDetail = () => {
       setLoading(false);
     }, 300);
   }, [id]);
+
+  const handleSubmit = (query: string, dbType: string) => {
+    // Create a new submission
+    const newSubmission = {
+      id: `sub-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      status: 'Correct' as const, // This would be determined by the backend
+      runtime: Math.floor(Math.random() * 200) + 50, // Mock runtime
+      query: query
+    };
+
+    // Add the new submission to the list
+    setSubmissions(prev => [newSubmission, ...prev]);
+
+    // Switch to submissions tab
+    setActiveTab("submissions");
+  };
 
   if (loading) {
     return (
@@ -274,9 +285,11 @@ const QuestionDetail = () => {
             <div className="h-full">
               <QuestionTabs
                 question={question.description}
-                schema={<SchemaDisplay tables={mockTables} />}
+                schema={<SchemaDisplay tables={mockTables} erdImage="/images/customer-orders-erd.png" />}
                 solutions={<SolutionsDisplay solution={mockSolutions} />}
-                submissions={<SubmissionsDisplay submissions={mockSubmissions} />}
+                submissions={<SubmissionsDisplay submissions={submissions} />}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
               />
             </div>
           </ResizablePanel>
@@ -287,7 +300,7 @@ const QuestionDetail = () => {
           {/* SQL Editor Panel */}
           <ResizablePanel defaultSize={50} minSize={30}>
             <div className="h-full">
-              <SqlEditor />
+              <SqlEditor onSubmit={handleSubmit} />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>

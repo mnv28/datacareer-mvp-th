@@ -1,21 +1,26 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import QuestionContent from './QuestionContent';
 
 interface QuestionTabsProps {
-  question: React.ReactNode;
+  question: string;
   schema: React.ReactNode;
   solutions: React.ReactNode;
   submissions: React.ReactNode;
+  activeTab?: string;
+  onTabChange?: (value: string) => void;
 }
 
 const QuestionTabs: React.FC<QuestionTabsProps> = ({
   question,
   schema,
   solutions,
-  submissions
+  submissions,
+  activeTab = "question",
+  onTabChange
 }) => {
   return (
-    <Tabs defaultValue="question" className="bg-white rounded-lg shadow-md">
+    <Tabs value={activeTab} onValueChange={onTabChange} className="bg-white rounded-lg shadow-md">
       <div className="sticky top-0 bg-white rounded-t-lg border-b z-10">
         <TabsList className="w-full justify-start rounded-none p-0">
           <TabsTrigger 
@@ -46,9 +51,7 @@ const QuestionTabs: React.FC<QuestionTabsProps> = ({
       </div>
       
       <TabsContent value="question" className="p-4 focus:outline-none">
-        <div className="prose max-w-none">
-          {question}
-        </div>
+        <QuestionContent content={question} />
       </TabsContent>
       
       <TabsContent value="schema" className="p-4 focus:outline-none">

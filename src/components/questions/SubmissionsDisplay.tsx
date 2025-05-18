@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import Toast from '@/components/ui/toast';
 
 interface Submission {
   id: string;
@@ -29,6 +30,32 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
   const [selectedSubmission, setSelectedSubmission] = React.useState<Submission | null>(
     submissions.length > 0 ? submissions[0] : null
   );
+  const [showToast, setShowToast] = React.useState(false);
+  const [toastMessage, setToastMessage] = React.useState('');
+  const [toastType, setToastType] = React.useState<'success' | 'error'>('success');
+
+  useEffect(() => {
+    if (selectedSubmission) {
+      setShowToast(true);
+      if (selectedSubmission.status === 'Correct') {
+        setToastType('success');
+        setToastMessage('Your query matches the expected output!');
+      } else if (selectedSubmission.status === 'Wrong') {
+        setToastType('error');
+        setToastMessage("Your query's output doesn't match with the solution's output!");
+      } else {
+        setToastType('error');
+        setToastMessage('There was an error executing your query.');
+      }
+
+      // Auto-hide toast after 5 seconds
+      const timer = setTimeout(() => {
+        setShowToast(false);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [selectedSubmission]);
 
   return (
     <div className="space-y-4">
@@ -71,6 +98,15 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
             </div>
             {selectedSubmission ? (
               <div className="p-4">
+                {showToast && (
+                  <div className="mb-4">
+                    <Toast
+                      message={toastMessage}
+                      type={toastType}
+                      onClose={() => setShowToast(false)}
+                    />
+                  </div>
+                )}
                 <div className="flex flex-wrap justify-between mb-3">
                   <div className="mb-2 mr-4">
                     <div className="text-xs text-gray-500">Submitted at</div>
@@ -96,7 +132,8 @@ customer_id, customer_name, total_spent, order_count, avg_order_value
                     </pre>
                   </div>
                 </div>
-                <div className="mt-6">
+                
+                <div className="mt-4">
                   <div className="text-xs text-gray-500 mb-1 font-semibold">Your Output</div>
                   <div className="bg-gray-50 border rounded-md p-3 overflow-x-auto">
                     <pre className="text-xs font-mono text-gray-800">

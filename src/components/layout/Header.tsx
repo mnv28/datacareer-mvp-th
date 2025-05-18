@@ -1,9 +1,24 @@
-
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { LogOut } from 'lucide-react';
 
 const Header = () => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success('Logged out successfully');
+      navigate('/login');
+    } catch (error) {
+      toast.error('Failed to logout');
+    }
+  };
+
   return (
     <header className="w-full bg-white border-b border-gray-200 shadow-sm">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -31,12 +46,14 @@ const Header = () => {
         </div>
         
         <div className="flex items-center space-x-2">
-          {/* <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue">
-            Sign In
+          <Button 
+            variant="ghost" 
+            className="text-datacareer-blue hover:text-datacareer-darkBlue flex items-center gap-2"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4" />
+            Logout
           </Button>
-          <Button className="bg-datacareer-orange hover:bg-opacity-90 text-white">
-            Sign Up
-          </Button> */}
         </div>
       </div>
     </header>

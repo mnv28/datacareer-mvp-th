@@ -23,16 +23,12 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
   const resultsRef = useRef<HTMLDivElement>(null);
   
   // Mock execution for demo purposes
-  const executeQuery = () => {
+  const runQuery = () => {
     setIsExecuting(true);
     setError(null);
     
     // Simulate API call
     setTimeout(() => {
-      if (onSubmit) {
-        onSubmit(query, dbType);
-      }
-      
       // Mock successful results if query looks valid
       if (query.toLowerCase().includes('select') && query.includes('FROM')) {
         const mockData = [
@@ -50,6 +46,12 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
       
       setIsExecuting(false);
     }, 1000);
+  };
+
+  const submitQuery = () => {
+    if (onSubmit) {
+      onSubmit(query, dbType);
+    }
   };
   
   // Resizer functionality
@@ -102,25 +104,35 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="mysql">MySQL</SelectItem>
-              <SelectItem value="postgresql">PostgreSQL</SelectItem>
+              <SelectItem value="postgresql" disabled>PostgreSQL (Coming Soon)</SelectItem>
             </SelectContent>
           </Select>
         </div>
         
-        <Button 
-          onClick={executeQuery}
-          disabled={isExecuting}
-          className="bg-datacareer-blue hover:bg-datacareer-darkBlue"
-        >
-          {isExecuting ? 'Running...' : 'Submit'}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={runQuery}
+            disabled={isExecuting}
+            variant="outline"
+            className="border-datacareer-blue text-datacareer-blue hover:bg-datacareer-blue hover:text-white"
+          >
+            {isExecuting ? 'Running...' : 'Run Query'}
+          </Button>
+          <Button 
+            onClick={submitQuery}
+            disabled={isExecuting}
+            className="bg-datacareer-blue hover:bg-datacareer-darkBlue"
+          >
+            Submit
+          </Button>
+        </div>
       </div>
       <div className="flex flex-col">
         <div ref={editorRef} className="h-64">
           <MonacoEditor
             height="100%"
-            defaultLanguage={dbType === 'postgresql' ? 'pgsql' : 'sql'}
-            language={dbType === 'postgresql' ? 'pgsql' : 'sql'}
+            defaultLanguage="sql"
+            language="sql"
             value={query}
             onChange={value => setQuery(value || '')}
             options={{
