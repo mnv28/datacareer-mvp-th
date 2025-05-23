@@ -180,6 +180,8 @@ export const mockCompanies = [
 
 function Index() {
   const [companies, setCompanies] = useState<Company[]>([]);
+  console.log("company=",companies);
+  
   const [loadingCompanies, setLoadingCompanies] = useState(true);
   const [errorCompanies, setErrorCompanies] = useState<string | null>(null);
 
@@ -223,6 +225,7 @@ function Index() {
         const transformedCompanies: Company[] = data.companies.map((company) => ({
           id: company.id,
           name: company.name,
+          logo:company.logo,
           domains: company.CompanyDomains.map((cd) => cd.Domain.name),
           questions: company.questions.map((question) => ({
             id: question.id,
@@ -277,6 +280,10 @@ function Index() {
         const matchesCompany = 
           selectedCompanies.length === 0 || 
           selectedCompanies.includes(company.name);
+
+          const matcheslogo = 
+          selectedCompanies.length === 0 || 
+          selectedCompanies.includes(company.logo);
           
         const matchesTopic = 
           selectedTopics.length === 0 || 
@@ -295,7 +302,7 @@ function Index() {
           selectedVariants.includes(question.type);
           
         return matchesSearch && matchesCompany && matchesTopic && 
-               matchesDomain && matchesDifficulty && matchesVariant;
+               matchesDomain && matchesDifficulty && matchesVariant && matcheslogo;
       });
       
       // Return the company with filtered questions

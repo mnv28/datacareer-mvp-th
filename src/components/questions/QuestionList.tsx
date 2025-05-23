@@ -20,6 +20,7 @@ export interface Company {
   name: string;
   domains: string[];
   questions: Question[];
+  logo?: string;
 }
 
 interface QuestionListProps {
@@ -63,7 +64,11 @@ const QuestionList: React.FC<QuestionListProps> = ({ companies }) => {
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between w-full text-left">
                 <div className="flex items-center space-x-3">
-                  <CompanyLogo name={company.name} size="sm" />
+                  <CompanyLogo 
+                    name={company.name} 
+                    size="sm" 
+                    logo={company.logo} 
+                  />
                   <div>
                     <span className="font-medium text-datacareer-darkBlue hover:text-datacareer-orange company-name">
                       {company.name}

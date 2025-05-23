@@ -4,6 +4,7 @@ interface CompanyLogoProps {
   name: string;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  logo?: string;
 }
 
 const getInitials = (name: string): string => {
@@ -32,7 +33,9 @@ const getRandomColor = (name: string): string => {
   return colors[index % colors.length];
 };
 
-export const CompanyLogo: React.FC<CompanyLogoProps> = ({ name, size = 'md', className = '' }) => {
+export const CompanyLogo: React.FC<CompanyLogoProps> = ({ name, size = 'md', className = '', logo }) => {
+  console.log("logo-===",logo );
+  
   const initials = getInitials(name);
   const bgColor = getRandomColor(name);
 
@@ -41,6 +44,18 @@ export const CompanyLogo: React.FC<CompanyLogoProps> = ({ name, size = 'md', cla
     md: 'w-8 h-8 text-sm',
     lg: 'w-10 h-10 text-base',
   };
+
+  if (logo) {
+    return (
+      <div className={`${sizeClasses[size]} rounded-full overflow-hidden ${className}`}>
+        <img 
+          src={logo} 
+          alt={`${name} logo`}
+          className="w-full h-full object-cover"
+        />
+      </div>
+    );
+  }
 
   return (
     <div
