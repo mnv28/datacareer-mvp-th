@@ -5,7 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { CompanyLogo } from '@/components/CompanyLogo';
 import './QuestionList.css';
 
-interface Question {
+export interface Question {
   id: number;
   title: string;
   type: 'SQL' | 'PostgreSQL';
@@ -15,7 +15,7 @@ interface Question {
   isPaid: boolean;
 }
 
-interface Company {
+export interface Company {
   id: number;
   name: string;
   domains: string[];

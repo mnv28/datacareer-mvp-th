@@ -1,17 +1,19 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { useAuth } from '@/contexts/AuthContext';
+import { useAppDispatch } from '@/redux/hooks';
+import { logout } from '@/redux/slices/authSlice';
 import { toast } from 'sonner';
 import { LogOut } from 'lucide-react';
+import logodatacareer from '../../../public/logoDataCareer.png';
 
 const Header = () => {
-  const { logout } = useAuth();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
-      await logout();
+      dispatch(logout());
       toast.success('Logged out successfully');
       navigate('/login');
     } catch (error) {
@@ -24,12 +26,7 @@ const Header = () => {
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <Link to="/" className="flex items-center">
-            <div className="w-10 h-10 rounded-lg bg-gradient-01 flex items-center justify-center shadow-md">
-              <span className="text-white font-bold text-xl">D</span>
-            </div>
-            <span className="ml-2 text-2xl font-bold text-datacareer-darkBlue">
-              datacareer<span className="text-datacareer-orange">.app</span>
-            </span>
+            <img src={logodatacareer} alt="DataCareer App Logo" className="h-10 w-auto" />
           </Link>
         </div>
         

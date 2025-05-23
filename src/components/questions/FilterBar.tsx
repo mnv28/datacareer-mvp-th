@@ -1,4 +1,4 @@
-import React from 'react';
+import { useEffect } from 'react';
 import { Search, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchCompanies } from '@/redux/slices/companySlice';
+import { fetchTopics } from '@/redux/slices/topicSlice';
+import { fetchDomains } from '@/redux/slices/domainSlice';
+import { RootState } from '@/redux/store';
+import { AppDispatch } from '@/redux/store';
 
 interface FilterBarProps {
   searchQuery: string;
@@ -38,24 +44,17 @@ const FilterBar: React.FC<FilterBarProps> = ({
   setSelectedVariants,
   onClearAll
 }) => {
-  // Mock data - replace with actual data from your backend
-  const companies = ['Amazon', 'Google', 'Microsoft', 'Meta', 'Apple'];
-  const topics = ['Data Analysis', 'Data Manipulation', 'Window Functions', 'Joins', 'Subqueries'];
-  const domains = [
-    'E-Commerce',
-    'Cloud Computing',
-    'Retail Analytics',
-    'Customer Analytics',
-    'Technology',
-    'Search Analytics',
-    'AI/ML',
-    'Enterprise Software',
-    'Gaming Analytics',
-    'Social Media',
-    'Digital Advertising',
-    'User Analytics',
-    'Content Moderation'
-  ];
+  const dispatch = useDispatch<AppDispatch>();
+  const { companies, isLoading: companiesLoading } = useSelector((state: RootState) => state.company);
+  const { topics, isLoading: topicsLoading } = useSelector((state: RootState) => state.topic);
+  const { domains, isLoading: domainsLoading } = useSelector((state: RootState) => state.domain);
+
+  useEffect(() => {
+    dispatch(fetchCompanies());
+    dispatch(fetchTopics());
+    dispatch(fetchDomains());
+  }, [dispatch]);
+
   const difficulties = ['Beginner', 'Intermediate', 'Advanced'];
   const variants = ['SQL', 'Python', 'PostgreSQL', 'MySQL'];
 
@@ -173,7 +172,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
             className="pl-9 h-10"
           />
         </div>
-        </div>
+      </div>
         
       {/* Filter Summary */}
       {(selectedCompanies.length > 0 || selectedTopics.length > 0 || 
@@ -228,7 +227,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
         <div className="flex flex-wrap gap-2">
           <FilterPopover
             title="Companies"
-            options={companies}
+            options={companies.map(company => company.name)}
             selected={selectedCompanies}
             setSelected={setSelectedCompanies}
             icon={<svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -237,7 +236,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
           />
           <FilterPopover
             title="Topics"
-            options={topics}
+            options={topics.map(topic => topic.name)}
             selected={selectedTopics}
             setSelected={setSelectedTopics}
             icon={<svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -246,7 +245,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
           />
           <FilterPopover
             title="Domains"
-            options={domains}
+            options={domains.map(domain => domain.name)}
             selected={selectedDomains}
             setSelected={setSelectedDomains}
             icon={<svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

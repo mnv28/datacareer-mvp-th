@@ -1,17 +1,19 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { Provider } from 'react-redux';
+// import { store } from '@/redux/store';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
 import ForgotPassword from '@/pages/auth/ForgotPassword';
 import Index from '@/pages/Index';
 import QuestionDetail from '@/pages/QuestionDetail';
+import { store } from './redux/store';
 
 const App = () => {
   return (
-    <AuthProvider>
+    <Provider store={store}>
       <Router>
         <Routes>
           {/* Public routes */}
@@ -42,7 +44,7 @@ const App = () => {
         </Routes>
         <Toaster position="top-right" />
       </Router>
-    </AuthProvider>
+    </Provider>
   );
 };
 

@@ -1,27 +1,44 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import FilterBar from '@/components/questions/FilterBar';
 import QuestionList from '@/components/questions/QuestionList';
 import ProgressSummary from '@/components/questions/ProgressSummary';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { ChevronDown, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
+import { Company, Question } from "@/components/questions/QuestionList"; // Import types
+import { apiInstance } from "@/api/axiosApi";
 
-interface Question {
-  id: number;
-  title: string;
-  type: 'SQL' | 'PostgreSQL';
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-  status: 'Solved' | 'Wrong' | 'Unattempted';
-  topic: string;
-  isPaid: boolean;
-}
 
-interface Company {
-  id: number;
-  name: string;
-  domains: string[];
-  questions: Question[];
-}
+// Define types based on the expected data structure after fetching and transformation
+// interface Domain {
+//   id: number;
+//   name: string;
+// }
 
-// Mock data
+// interface Topic {
+//   id: number;
+//   name: string;
+// }
+
+// interface Question {
+//   id: number;
+//   title: string;
+//   type: string; // e.g., "SQL", "PostgreSQL"
+//   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+//   status: 'Solved' | 'Wrong' | 'Unattempted'; // Need to determine how to map API status to this
+//   topic: string; // Assuming topic name here
+//   isPaid: boolean; // Need to determine how to map API data to this
+// }
+
+// interface Company {
+//   id: number;
+//   name: string;
+//   domains: string[]; // Array of domain names
+//   questions: Question[];
+// }
 export const mockCompanies = [
   {
     id: 1,
@@ -161,48 +178,24 @@ export const mockCompanies = [
   }
 ];
 
-// Calculate the progress data
-const calculateProgressData = (companies: typeof mockCompanies) => {
-  let total = 0;
-  let solved = 0;
-  let beginner = 0;
-  let intermediate = 0;
-  let advanced = 0;
-  let beginnerSolved = 0;
-  let intermediateSolved = 0;
-  let advancedSolved = 0;
+function Index() {
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(true);
+  const [errorCompanies, setErrorCompanies] = useState<string | null>(null);
 
-  companies.forEach(company => {
-    company.questions.forEach(question => {
-      total++;
-      if (question.status === 'Solved') solved++;
-      
-      if (question.difficulty === 'Beginner') {
-        beginner++;
-        if (question.status === 'Solved') beginnerSolved++;
-      } else if (question.difficulty === 'Intermediate') {
-        intermediate++;
-        if (question.status === 'Solved') intermediateSolved++;
-      } else if (question.difficulty === 'Advanced') {
-        advanced++;
-        if (question.status === 'Solved') advancedSolved++;
-      }
-    });
+  const [progressData, setProgressData] = useState({
+    totalAttempted: 0,
+    totalSolved: 0,
+    overallProgress: 0,
+    difficultyProgress: {
+      beginner: { attempted: 0, solved: 0 },
+      intermediate: { attempted: 0, solved: 0 },
+      advanced: { attempted: 0, solved: 0 },
+    },
   });
+  const [loadingProgress, setLoadingProgress] = useState(true);
+  const [errorProgress, setErrorProgress] = useState<string | null>(null);
 
-  return {
-    total,
-    solved,
-    beginner,
-    intermediate,
-    advanced,
-    beginnerSolved,
-    intermediateSolved,
-    advancedSolved
-  };
-};
-
-const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
@@ -210,8 +203,69 @@ const Index = () => {
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
   const [selectedVariants, setSelectedVariants] = useState<string[]>([]);
   
+  // Fetch companies data
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const response = await apiInstance.get('/api/question/filterbycompany', {
+          params: {
+            search: '',
+            topicId: '',
+            companyId: '',
+            domainId: '',
+            difficulty: '',
+            variant: '[MySQL]'
+          }
+        });
+
+        const data = response.data;
+
+        const transformedCompanies: Company[] = data.companies.map((company) => ({
+          id: company.id,
+          name: company.name,
+          domains: company.CompanyDomains.map((cd) => cd.Domain.name),
+          questions: company.questions.map((question) => ({
+            id: question.id,
+            title: question.title,
+            type: (question.dbType === 'MySQL' ? 'SQL' : question.dbType) as 'SQL' | 'PostgreSQL',
+            difficulty: (question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1)) as 'Beginner' | 'Intermediate' | 'Advanced',
+            status: 'Unattempted' as 'Solved' | 'Wrong' | 'Unattempted',
+            topic: question.topic.name,
+            isPaid: false
+          })),
+        }));
+
+        setCompanies(transformedCompanies);
+      } catch (e) {
+        setErrorCompanies(e.message);
+        console.error("Fetching companies failed:", e);
+      } finally {
+        setLoadingCompanies(false);
+      }
+    };
+
+    fetchCompanies();
+  }, []);
+
+  // Fetch user progress data
+  useEffect(() => {
+    const fetchProgress = async () => {
+      try {
+        const response = await apiInstance.get('/api/question/getUserProgress');
+        setProgressData(response.data.progress);
+      } catch (e) {
+        setErrorProgress(e.message);
+        console.error("Fetching progress failed:", e);
+      } finally {
+        setLoadingProgress(false);
+      }
+    };
+
+    fetchProgress();
+  }, []);
+
   // Apply filters
-  const filteredCompanies = mockCompanies
+  const filteredCompanies = companies
     .map(company => {
       // Filter questions based on all filter criteria
       const filteredQuestions = company.questions.filter(question => {
@@ -253,7 +307,25 @@ const Index = () => {
     // Only include companies that have questions after filtering
     .filter(company => company.questions.length > 0);
     
-  const progressData = calculateProgressData(mockCompanies);
+  // Calculate total counts from the companies data (needed for ProgressSummary)
+  const totalCounts = {
+    total: companies.reduce((sum, company) => sum + company.questions.length, 0),
+    beginner: companies.reduce((sum, company) => sum + company.questions.filter(q => q.difficulty === 'Beginner').length, 0),
+    intermediate: companies.reduce((sum, company) => sum + company.questions.filter(q => q.difficulty === 'Intermediate').length, 0),
+    advanced: companies.reduce((sum, company) => sum + company.questions.filter(q => q.difficulty === 'Advanced').length, 0),
+  };
+
+  // Combine API progress data with calculated total counts for ProgressSummary
+  const progressSummaryProps = {
+    total: totalCounts.total,
+    solved: progressData.totalSolved,
+    beginner: totalCounts.beginner,
+    intermediate: totalCounts.intermediate,
+    advanced: totalCounts.advanced,
+    beginnerSolved: progressData.difficultyProgress.beginner.solved,
+    intermediateSolved: progressData.difficultyProgress.intermediate.solved,
+    advancedSolved: progressData.difficultyProgress.advanced.solved,
+  };
 
   const handleClearAll = () => {
     setSelectedCompanies([]);
@@ -291,16 +363,26 @@ const Index = () => {
               onClearAll={handleClearAll}
             />
             
-            <QuestionList companies={filteredCompanies} />
+            {loadingCompanies && <p>Loading companies...</p>}
+            {errorCompanies && <p className="text-red-500">Error loading companies: {errorCompanies}</p>}
+            {!loadingCompanies && !errorCompanies && (filteredCompanies.length > 0 ? (
+              <QuestionList companies={filteredCompanies} />
+            ) : (
+              <p>No companies found matching your criteria.</p>
+            ))}
           </div>
           
           <div className="lg:col-span-1">
-            <ProgressSummary {...progressData} />
+            {loadingProgress && <p>Loading progress...</p>}
+            {errorProgress && <p className="text-red-500">Error loading progress: {errorProgress}</p>}
+            {!loadingProgress && !errorProgress && (
+              <ProgressSummary {...progressSummaryProps} />
+            )}
           </div>
         </div>
       </div>
     </MainLayout>
   );
-};
+}
 
 export default Index;

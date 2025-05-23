@@ -3,19 +3,20 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import AuthLayout from '@/components/auth/AuthLayout';
 import { Eye, EyeOff } from 'lucide-react';
+import { useAppDispatch, useAppSelector } from '@/redux/hooks';
+import { register } from '@/redux/slices/authSlice';
 
 const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { register } = useAuth();
+  const dispatch = useAppDispatch();
+  const { isLoading } = useAppSelector((state) => state.auth);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,23 +27,19 @@ const Register = () => {
       return;
     }
 
-    setIsLoading(true);
-
     try {
-      await register(name, email, password);
+      await dispatch(register({ name, email, password })).unwrap();
       toast.success('Account created successfully!');
       navigate('/');
     } catch (error) {
-      toast.error('Failed to create account');
-    } finally {
-      setIsLoading(false);
+      toast.error(error as string);
     }
   };
 
   return (
     <AuthLayout
-      title="Create your account"
-      subtitle="Join DataCareer to start your journey"
+      title="Create an account"
+      subtitle="Sign up to get started"
       footerText="Already have an account?"
       footerLink={{ text: 'Sign in', to: '/login' }}
     >
@@ -97,13 +94,13 @@ const Register = () => {
             />
           </div>
           <div>
-            <Label htmlFor="confirm-password" className="text-sm font-medium text-gray-700">
+            <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
               Confirm password
             </Label>
             <div className="relative">
               <Input
-                id="confirm-password"
-                name="confirm-password"
+                id="confirmPassword"
+                name="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
                 autoComplete="new-password"
                 required

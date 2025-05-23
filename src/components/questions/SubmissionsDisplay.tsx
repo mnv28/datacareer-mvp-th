@@ -4,7 +4,7 @@ import Toast from '@/components/ui/toast';
 interface Submission {
   id: string;
   timestamp: string;
-  status: 'Correct' | 'Wrong' | 'Error';
+  status: 'Correct' | 'Wrong' | 'Error' | 'Unattempted';
   runtime: number;
   query: string;
 }

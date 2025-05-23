@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Progress } from "@/components/ui/progress";
 
@@ -48,7 +47,7 @@ const ProgressSummary: React.FC<ProgressSummaryProps> = ({
             </div>
             <span className="text-sm font-medium text-datacareer-darkBlue">{beginnerSolved} / {beginner}</span>
           </div>
-          <Progress value={beginnerPercentage} className="h-1.5 bg-gray-100" indicatorClassName="bg-difficulty-beginner" />
+          <Progress value={beginnerPercentage} className="h-1.5 bg-gray-100" />
         </div>
         
         <div className="space-y-1">
@@ -59,7 +58,7 @@ const ProgressSummary: React.FC<ProgressSummaryProps> = ({
             </div>
             <span className="text-sm font-medium text-datacareer-darkBlue">{intermediateSolved} / {intermediate}</span>
           </div>
-          <Progress value={intermediatePercentage} className="h-1.5 bg-gray-100" indicatorClassName="bg-difficulty-intermediate" />
+          <Progress value={intermediatePercentage} className="h-1.5 bg-gray-100" />
         </div>
         
         <div className="space-y-1">
@@ -70,7 +69,7 @@ const ProgressSummary: React.FC<ProgressSummaryProps> = ({
             </div>
             <span className="text-sm font-medium text-datacareer-darkBlue">{advancedSolved} / {advanced}</span>
           </div>
-          <Progress value={advancedPercentage} className="h-1.5 bg-gray-100" indicatorClassName="bg-difficulty-advanced" />
+          <Progress value={advancedPercentage} className="h-1.5 bg-gray-100" />
         </div>
       </div>
       
