@@ -99,20 +99,25 @@ const QuestionDetail = () => {
   }, [id]);
 
   // This function is now called by SqlEditor after a successful submission API call
-  const handleSubmit = (submissionData: SubmissionResponse) => {
-    // Transform the new submission data from the API response format to DisplaySubmission format
+  const handleSubmit = (response: { message: string; submission: SubmissionResponse }) => {
+    const sub = response.submission;
+
+    // Map API status to display status
+    let displayStatus: 'Correct' | 'Wrong' | 'Error' | 'Unattempted';
+    if (sub.status === 'passed') displayStatus = 'Correct';
+    else if (sub.status === 'error') displayStatus = 'Error';
+    else if (sub.status === 'failed') displayStatus = 'Wrong';
+    else displayStatus = 'Unattempted';
+
     const newSubmission: DisplaySubmission = {
-      id: `sub-${submissionData.id}`,
-      timestamp: submissionData.submittedAt,
-      status: submissionData.status === 'passed' ? 'Correct' : submissionData.status === 'error' ? 'Error' : submissionData.status === 'failed' ? 'Wrong' : 'Unattempted', // Map API status to display status
-      runtime: submissionData.runTime,
-      query: submissionData.code
+      id: `sub-${sub.id}`,
+      timestamp: sub.submittedAt,
+      status: displayStatus,
+      runtime: sub.runTime,
+      query: sub.code
     };
 
-    // Add the new submission to the list at the beginning
     setSubmissions(prev => [newSubmission, ...prev]);
-
-    // Switch to submissions tab
     setActiveTab("submissions");
   };
 
@@ -165,7 +170,7 @@ const QuestionDetail = () => {
             <div className="h-full">
               <QuestionTabs
                 question={question.questionContent}
-                schema={<SchemaDisplay tables={[]} erdImage={question.schemaImage} />}
+                schema={<SchemaDisplay tables={[]} erdImage={question.schemaImage} schema={question.schemaContent} />}
                 solutions={<SolutionsDisplay solution={question.solution} />}
                 submissions={<SubmissionsDisplay submissions={submissions} />}
                 activeTab={activeTab}
