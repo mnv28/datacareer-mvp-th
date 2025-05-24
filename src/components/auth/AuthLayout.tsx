@@ -25,8 +25,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
       {/* Header */}
       <div className="flex justify-center py-8">
         <Link to="/" className="flex items-center space-x-2">
-          <Logo className="h-8 w-auto" />
-          <span className="text-2xl font-bold text-datacareer-blue">DataCareer</span>
+          {/* <Logo className="h-8 w-auto" /> */}
+          <span className="text-2xl font-bold text-datacareer-blue">DataCareer MVP</span>
         </Link>
       </div>
 
