@@ -16,17 +16,30 @@ import { AppDispatch } from '@/redux/store';
 interface FilterBarProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  selectedCompanies: string[];
-  setSelectedCompanies: (companies: string[]) => void;
-  selectedTopics: string[];
-  setSelectedTopics: (topics: string[]) => void;
-  selectedDomains: string[];
-  setSelectedDomains: (domains: string[]) => void;
+  selectedCompanies: number[];
+  setSelectedCompanies: (companies: number[]) => void;
+  selectedTopics: number[];
+  setSelectedTopics: (topics: number[]) => void;
+  selectedDomains: number[];
+  setSelectedDomains: (domains: number[]) => void;
   selectedDifficulties: string[];
   setSelectedDifficulties: (difficulties: string[]) => void;
   selectedVariants: string[];
   setSelectedVariants: (variants: string[]) => void;
   onClearAll: () => void;
+}
+
+interface FilterOption {
+  id: number;
+  name: string;
+}
+
+interface FilterPopoverProps<T extends number | string> {
+  title: string;
+  options: FilterOption[] | string[];
+  selected: T[];
+  setSelected: (values: T[]) => void;
+  icon: React.ReactNode;
 }
 
 const FilterBar: React.FC<FilterBarProps> = ({
@@ -58,10 +71,10 @@ const FilterBar: React.FC<FilterBarProps> = ({
   const difficulties = ['Beginner', 'Intermediate', 'Advanced'];
   const variants = ['SQL', 'Python', 'PostgreSQL', 'MySQL'];
 
-  const handleMultiSelect = (
-    value: string,
-    selected: string[],
-    setSelected: (values: string[]) => void
+  const handleMultiSelect = <T extends number | string>(
+    value: T,
+    selected: T[],
+    setSelected: (values: T[]) => void
   ) => {
     if (selected.includes(value)) {
       setSelected(selected.filter(item => item !== value));
@@ -70,31 +83,30 @@ const FilterBar: React.FC<FilterBarProps> = ({
     }
   };
 
-  const handleSelectAll = (
-    options: string[],
-    selected: string[],
-    setSelected: (values: string[]) => void
+  const handleSelectAll = <T extends number | string>(
+    options: FilterOption[] | string[],
+    selected: T[],
+    setSelected: (values: T[]) => void
   ) => {
     if (selected.length === options.length) {
       setSelected([]);
     } else {
-      setSelected(options);
+      const values = options.map(option => 
+        typeof option === 'string' ? option : option.id
+      ) as T[];
+      setSelected(values);
     }
   };
 
-  const FilterPopover = ({ 
+  const FilterPopover = <T extends number | string>({ 
     title, 
     options, 
     selected, 
     setSelected, 
     icon 
-  }: { 
-    title: string; 
-    options: string[]; 
-    selected: string[]; 
-    setSelected: (values: string[]) => void;
-    icon: React.ReactNode;
-  }) => {
+  }: FilterPopoverProps<T>) => {
+    const isCompanyFilter = title === 'Companies';
+
     return (
       <Popover>
         <PopoverTrigger asChild>
@@ -118,7 +130,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleSelectAll(options, selected, setSelected)}
+                onClick={() => handleSelectAll<T>(options, selected, setSelected)}
                 className="text-xs"
               >
                 {selected.length === options.length ? 'Deselect All' : 'Select All'}
@@ -136,21 +148,26 @@ const FilterBar: React.FC<FilterBarProps> = ({
             </div>
             <ScrollArea className="h-[200px] pr-4">
               <div className="space-y-2">
-                {options.map((option) => (
-                  <div key={option} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`${title.toLowerCase()}-${option}`}
-                      checked={selected.includes(option)}
-                      onCheckedChange={() => handleMultiSelect(option, selected, setSelected)}
-                    />
-                    <label 
-                      htmlFor={`${title.toLowerCase()}-${option}`} 
-                      className="text-sm cursor-pointer hover:text-datacareer-blue transition-colors"
-                    >
-                      {option}
-                    </label>
-                  </div>
-                ))}
+                {options.map((option) => {
+                  const value = typeof option === 'string' ? option : option.id;
+                  const label = typeof option === 'string' ? option : option.name;
+                  
+                  return (
+                    <div key={value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`${title.toLowerCase()}-${value}`}
+                        checked={selected.includes(value as T)}
+                        onCheckedChange={() => handleMultiSelect<T>(value as T, selected, setSelected)}
+                      />
+                      <label 
+                        htmlFor={`${title.toLowerCase()}-${value}`} 
+                        className="text-sm cursor-pointer hover:text-datacareer-blue transition-colors"
+                      >
+                        {label}
+                      </label>
+                    </div>
+                  );
+                })}
               </div>
             </ScrollArea>
           </div>
@@ -182,19 +199,19 @@ const FilterBar: React.FC<FilterBarProps> = ({
           <div className="flex flex-wrap gap-2">
             {selectedCompanies.length > 0 && (
               <Badge variant="secondary" className="flex items-center gap-1 bg-white">
-                Companies: {selectedCompanies.join(', ')}
+                Companies: {selectedCompanies.map(id => companies.find(c => c.id === id)?.name).filter(Boolean).join(', ')}
                 <X className="h-3 w-3 cursor-pointer hover:text-red-500" onClick={() => setSelectedCompanies([])} />
               </Badge>
             )}
             {selectedTopics.length > 0 && (
               <Badge variant="secondary" className="flex items-center gap-1 bg-white">
-                Topics: {selectedTopics.join(', ')}
+                Topics: {selectedTopics.map(id => topics.find(t => t.id === id)?.name).filter(Boolean).join(', ')}
                 <X className="h-3 w-3 cursor-pointer hover:text-red-500" onClick={() => setSelectedTopics([])} />
               </Badge>
             )}
             {selectedDomains.length > 0 && (
               <Badge variant="secondary" className="flex items-center gap-1 bg-white">
-                Domains: {selectedDomains.join(', ')}
+                Domains: {selectedDomains.map(id => domains.find(d => d.id === id)?.name).filter(Boolean).join(', ')}
                 <X className="h-3 w-3 cursor-pointer hover:text-red-500" onClick={() => setSelectedDomains([])} />
               </Badge>
             )}
@@ -227,7 +244,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
         <div className="flex flex-wrap gap-2">
           <FilterPopover
             title="Companies"
-            options={companies.map(company => company.name)}
+            options={companies}
             selected={selectedCompanies}
             setSelected={setSelectedCompanies}
             icon={<svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -236,7 +253,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
           />
           <FilterPopover
             title="Topics"
-            options={topics.map(topic => topic.name)}
+            options={topics}
             selected={selectedTopics}
             setSelected={setSelectedTopics}
             icon={<svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -245,7 +262,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
           />
           <FilterPopover
             title="Domains"
-            options={domains.map(domain => domain.name)}
+            options={domains}
             selected={selectedDomains}
             setSelected={setSelectedDomains}
             icon={<svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

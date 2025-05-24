@@ -39,144 +39,144 @@ import { apiInstance } from "@/api/axiosApi";
 //   domains: string[]; // Array of domain names
 //   questions: Question[];
 // }
-export const mockCompanies = [
-  {
-    id: 1,
-    name: 'Amazon',
-    domains: ['E-Commerce', 'Cloud Computing', 'Retail Analytics', 'Customer Analytics'],
-    questions: [
-      {
-        id: 101,
-        title: 'Customer Order Analysis',
-        type: 'SQL' as const,
-        difficulty: 'Intermediate' as const,
-        status: 'Solved' as const,
-        topic: 'Data Analysis',
-        isPaid: false
-      },
-      {
-        id: 102,
-        title: 'Product Category Metrics',
-        type: 'PostgreSQL' as const,
-        difficulty: 'Advanced' as const,
-        status: 'Unattempted' as const,
-        topic: 'Window Functions',
-        isPaid: true
-      },
-      {
-        id: 103,
-        title: 'Delivery Time Optimization',
-        type: 'SQL' as const,
-        difficulty: 'Beginner' as const,
-        status: 'Wrong' as const,
-        topic: 'Joins',
-        isPaid: false
-      }
-    ]
-  },
-  {
-    id: 2,
-    name: 'Google',
-    domains: ['Technology', 'Search Analytics', 'Cloud Computing', 'AI/ML'],
-    questions: [
-      {
-        id: 201,
-        title: 'Search Query Analysis',
-        type: 'SQL' as const,
-        difficulty: 'Advanced' as const,
-        status: 'Unattempted' as const,
-        topic: 'Window Functions',
-        isPaid: true
-      },
-      {
-        id: 202,
-        title: 'User Session Analysis',
-        type: 'SQL' as const,
-        difficulty: 'Intermediate' as const,
-        status: 'Solved' as const,
-        topic: 'Data Analysis',
-        isPaid: false
-      }
-    ]
-  },
-  {
-    id: 3,
-    name: 'Microsoft',
-    domains: ['Technology', 'Cloud Computing', 'Enterprise Software', 'Gaming Analytics'],
-    questions: [
-      {
-        id: 301,
-        title: 'Azure Usage Metrics',
-        type: 'PostgreSQL' as const,
-        difficulty: 'Intermediate' as const,
-        status: 'Unattempted' as const,
-        topic: 'Data Analysis',
-        isPaid: false
-      },
-      {
-        id: 302,
-        title: 'Office License Tracking',
-        type: 'SQL' as const,
-        difficulty: 'Beginner' as const,
-        status: 'Solved' as const,
-        topic: 'Joins',
-        isPaid: true
-      },
-      {
-        id: 303,
-        title: 'Game Pass Subscriber Analysis',
-        type: 'SQL' as const,
-        difficulty: 'Beginner' as const,
-        status: 'Solved' as const,
-        topic: 'Data Manipulation',
-        isPaid: false
-      }
-    ]
-  },
-  {
-    id: 4,
-    name: 'Meta',
-    domains: ['Social Media', 'Digital Advertising', 'User Analytics', 'Content Moderation'],
-    questions: [
-      {
-        id: 401,
-        title: 'Friend Recommendation Algorithm',
-        type: 'SQL' as const,
-        difficulty: 'Advanced' as const,
-        status: 'Wrong' as const,
-        topic: 'Graph Analysis',
-        isPaid: true
-      },
-      {
-        id: 402,
-        title: 'User Engagement Metrics',
-        type: 'PostgreSQL' as const,
-        difficulty: 'Intermediate' as const,
-        status: 'Solved' as const,
-        topic: 'Data Analysis',
-        isPaid: false
-      },
-      {
-        id: 403,
-        title: 'Ad Campaign Performance',
-        type: 'SQL' as const,
-        difficulty: 'Intermediate' as const,
-        status: 'Unattempted' as const,
-        topic: 'Data Analysis',
-        isPaid: false
-      },
-      {
-        id: 404,
-        title: 'Content Moderation Efficiency',
-        type: 'SQL' as const,
-        difficulty: 'Beginner' as const,
-        status: 'Solved' as const,
-        topic: 'Data Manipulation',
-        isPaid: true
-      }
-    ]
-  }
-];
+// export const mockCompanies = [
+//   {
+//     id: 1,
+//     name: 'Amazon',
+//     domains: ['E-Commerce', 'Cloud Computing', 'Retail Analytics', 'Customer Analytics'],
+//     questions: [
+//       {
+//         id: 101,
+//         title: 'Customer Order Analysis',
+//         type: 'SQL' as const,
+//         difficulty: 'Intermediate' as const,
+//         status: 'Solved' as const,
+//         topic: 'Data Analysis',
+//         isPaid: false
+//       },
+//       {
+//         id: 102,
+//         title: 'Product Category Metrics',
+//         type: 'PostgreSQL' as const,
+//         difficulty: 'Advanced' as const,
+//         status: 'Unattempted' as const,
+//         topic: 'Window Functions',
+//         isPaid: true
+//       },
+//       {
+//         id: 103,
+//         title: 'Delivery Time Optimization',
+//         type: 'SQL' as const,
+//         difficulty: 'Beginner' as const,
+//         status: 'Wrong' as const,
+//         topic: 'Joins',
+//         isPaid: false
+//       }
+//     ]
+//   },
+//   {
+//     id: 2,
+//     name: 'Google',
+//     domains: ['Technology', 'Search Analytics', 'Cloud Computing', 'AI/ML'],
+//     questions: [
+//       {
+//         id: 201,
+//         title: 'Search Query Analysis',
+//         type: 'SQL' as const,
+//         difficulty: 'Advanced' as const,
+//         status: 'Unattempted' as const,
+//         topic: 'Window Functions',
+//         isPaid: true
+//       },
+//       {
+//         id: 202,
+//         title: 'User Session Analysis',
+//         type: 'SQL' as const,
+//         difficulty: 'Intermediate' as const,
+//         status: 'Solved' as const,
+//         topic: 'Data Analysis',
+//         isPaid: false
+//       }
+//     ]
+//   },
+//   {
+//     id: 3,
+//     name: 'Microsoft',
+//     domains: ['Technology', 'Cloud Computing', 'Enterprise Software', 'Gaming Analytics'],
+//     questions: [
+//       {
+//         id: 301,
+//         title: 'Azure Usage Metrics',
+//         type: 'PostgreSQL' as const,
+//         difficulty: 'Intermediate' as const,
+//         status: 'Unattempted' as const,
+//         topic: 'Data Analysis',
+//         isPaid: false
+//       },
+//       {
+//         id: 302,
+//         title: 'Office License Tracking',
+//         type: 'SQL' as const,
+//         difficulty: 'Beginner' as const,
+//         status: 'Solved' as const,
+//         topic: 'Joins',
+//         isPaid: true
+//       },
+//       {
+//         id: 303,
+//         title: 'Game Pass Subscriber Analysis',
+//         type: 'SQL' as const,
+//         difficulty: 'Beginner' as const,
+//         status: 'Solved' as const,
+//         topic: 'Data Manipulation',
+//         isPaid: false
+//       }
+//     ]
+//   },
+//   {
+//     id: 4,
+//     name: 'Meta',
+//     domains: ['Social Media', 'Digital Advertising', 'User Analytics', 'Content Moderation'],
+//     questions: [
+//       {
+//         id: 401,
+//         title: 'Friend Recommendation Algorithm',
+//         type: 'SQL' as const,
+//         difficulty: 'Advanced' as const,
+//         status: 'Wrong' as const,
+//         topic: 'Graph Analysis',
+//         isPaid: true
+//       },
+//       {
+//         id: 402,
+//         title: 'User Engagement Metrics',
+//         type: 'PostgreSQL' as const,
+//         difficulty: 'Intermediate' as const,
+//         status: 'Solved' as const,
+//         topic: 'Data Analysis',
+//         isPaid: false
+//       },
+//       {
+//         id: 403,
+//         title: 'Ad Campaign Performance',
+//         type: 'SQL' as const,
+//         difficulty: 'Intermediate' as const,
+//         status: 'Unattempted' as const,
+//         topic: 'Data Analysis',
+//         isPaid: false
+//       },
+//       {
+//         id: 404,
+//         title: 'Content Moderation Efficiency',
+//         type: 'SQL' as const,
+//         difficulty: 'Beginner' as const,
+//         status: 'Solved' as const,
+//         topic: 'Data Manipulation',
+//         isPaid: true
+//       }
+//     ]
+//   }
+// ];
 
 function Index() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -199,9 +199,9 @@ function Index() {
   const [errorProgress, setErrorProgress] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
-  const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
+  const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
+  const [selectedTopics, setSelectedTopics] = useState<number[]>([]);
+  const [selectedDomains, setSelectedDomains] = useState<number[]>([]);
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
   const [selectedVariants, setSelectedVariants] = useState<string[]>([]);
   
@@ -211,12 +211,12 @@ function Index() {
       try {
         const response = await apiInstance.get('/api/question/filterbycompany', {
           params: {
-            search: '',
-            topicId: '',
-            companyId: '',
-            domainId: '',
-            difficulty: '',
-            variant: '[MySQL]'
+            search: searchQuery,
+            topicId: selectedTopics.length > 0 ? `[${selectedTopics.join(',')}]` : '',
+            companyId: selectedCompanies.length > 0 ? `[${selectedCompanies.join(',')}]` : '',
+            domainId: selectedDomains.length > 0 ? `[${selectedDomains.join(',')}]` : '',
+            difficulty: selectedDifficulties.length > 0 ? `[${selectedDifficulties.join(',')}]` : '',
+            variant: selectedVariants.length > 0 ? `[${selectedVariants.join(',')}]` : '[MySQL]'
           }
         });
 
@@ -225,15 +225,21 @@ function Index() {
         const transformedCompanies: Company[] = data.companies.map((company) => ({
           id: company.id,
           name: company.name,
-          logo:company.logo,
-          domains: company.CompanyDomains.map((cd) => cd.Domain.name),
+          logo: company.logo,
+          domains: company.CompanyDomains.map((cd) => ({
+            id: cd.Domain.id,
+            name: cd.Domain.name
+          })),
           questions: company.questions.map((question) => ({
             id: question.id,
             title: question.title,
             type: (question.dbType === 'MySQL' ? 'SQL' : question.dbType) as 'SQL' | 'PostgreSQL',
             difficulty: (question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1)) as 'Beginner' | 'Intermediate' | 'Advanced',
             status: 'Unattempted' as 'Solved' | 'Wrong' | 'Unattempted',
-            topic: question.topic.name,
+            topic: {
+              id: question.topic.id,
+              name: question.topic.name
+            },
             isPaid: false
           })),
         }));
@@ -248,7 +254,7 @@ function Index() {
     };
 
     fetchCompanies();
-  }, []);
+  }, [searchQuery, selectedCompanies, selectedTopics, selectedDomains, selectedDifficulties, selectedVariants]);
 
   // Fetch user progress data
   useEffect(() => {
@@ -279,19 +285,15 @@ function Index() {
           
         const matchesCompany = 
           selectedCompanies.length === 0 || 
-          selectedCompanies.includes(company.name);
-
-          const matcheslogo = 
-          selectedCompanies.length === 0 || 
-          selectedCompanies.includes(company.logo);
+          selectedCompanies.includes(company.id);
           
         const matchesTopic = 
           selectedTopics.length === 0 || 
-          selectedTopics.includes(question.topic);
+          selectedTopics.includes(question.topic.id);
           
         const matchesDomain = 
           selectedDomains.length === 0 || 
-          company.domains.some(domain => selectedDomains.includes(domain));
+          company.domains.some(domain => selectedDomains.includes(domain.id));
           
         const matchesDifficulty = 
           selectedDifficulties.length === 0 || 
@@ -302,7 +304,7 @@ function Index() {
           selectedVariants.includes(question.type);
           
         return matchesSearch && matchesCompany && matchesTopic && 
-               matchesDomain && matchesDifficulty && matchesVariant && matcheslogo;
+               matchesDomain && matchesDifficulty && matchesVariant;
       });
       
       // Return the company with filtered questions

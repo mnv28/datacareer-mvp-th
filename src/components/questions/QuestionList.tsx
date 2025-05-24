@@ -11,14 +11,20 @@ export interface Question {
   type: 'SQL' | 'PostgreSQL';
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   status: 'Solved' | 'Wrong' | 'Unattempted';
-  topic: string;
+  topic: {
+    id: number;
+    name: string;
+  };
   isPaid: boolean;
 }
 
 export interface Company {
   id: number;
   name: string;
-  domains: string[];
+  domains: {
+    id: number;
+    name: string;
+  }[];
   questions: Question[];
   logo?: string;
 }
@@ -80,15 +86,12 @@ const QuestionList: React.FC<QuestionListProps> = ({ companies }) => {
                 </div>
                 <div className="flex items-center mt-1 md:mt-0">
                   <div className="flex flex-wrap gap-1 mr-3">
-                    {company.domains.map((domain, index) => (
-                      <span key={index} className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full no-underline hover:no-underline decoration-none hover:decoration-none domain-badge">
-                        {domain}
+                    {company.domains.map((domain) => (
+                      <span key={domain.id} className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full no-underline hover:no-underline decoration-none hover:decoration-none domain-badge">
+                        {domain.name}
                       </span>
                     ))}
                   </div>
-                  {/* <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full no-underline hover:no-underline decoration-none hover:decoration-none">
-                    {company.questions.filter(q => q.status === 'Solved').length} solved
-                  </span> */}
                 </div>
               </div>
             </AccordionTrigger>
@@ -108,7 +111,7 @@ const QuestionList: React.FC<QuestionListProps> = ({ companies }) => {
                         <h4 className="text-sm font-medium text-datacareer-darkBlue hover:text-datacareer-orange">
                           {question.title}
                         </h4>
-                        <p className="text-xs text-gray-500 mt-0.5">{question.topic}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{question.topic.name}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 mt-2 md:mt-0 ml-7 md:ml-0">
