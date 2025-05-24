@@ -86,9 +86,9 @@ const QuestionList: React.FC<QuestionListProps> = ({ companies }) => {
                       </span>
                     ))}
                   </div>
-                  <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full no-underline hover:no-underline decoration-none hover:decoration-none">
+                  {/* <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full no-underline hover:no-underline decoration-none hover:decoration-none">
                     {company.questions.filter(q => q.status === 'Solved').length} solved
-                  </span>
+                  </span> */}
                 </div>
               </div>
             </AccordionTrigger>
