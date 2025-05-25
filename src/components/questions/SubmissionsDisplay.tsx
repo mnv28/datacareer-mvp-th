@@ -4,7 +4,7 @@ import Toast from '@/components/ui/toast';
 interface Submission {
   id: string;
   timestamp: string;
-  status: 'Correct' | 'Wrong' | 'Error' | 'Unattempted';
+  status: 'Correct' | 'Wrong' | 'Error' |  'mismatch';
   runtime: number;
   query: string;
 }
@@ -21,6 +21,8 @@ const getStatusBadgeClass = (status: string) => {
       return 'bg-red-100 text-red-800';
     case 'Error':
       return 'bg-orange-100 text-orange-800';
+    case 'mismatch':
+      return 'bg-red-100 text-red-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }
@@ -40,7 +42,7 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
       if (selectedSubmission.status === 'Correct') {
         setToastType('success');
         setToastMessage('Your query matches the expected output!');
-      } else if (selectedSubmission.status === 'Wrong') {
+      } else if (selectedSubmission.status === 'mismatch') {
         setToastType('error');
         setToastMessage("Your query's output doesn't match with the solution's output!");
       } else {

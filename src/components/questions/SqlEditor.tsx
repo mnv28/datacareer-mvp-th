@@ -65,6 +65,7 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
         questionId: parseInt(id || '0'),
         code: query
       });
+      console.log("response.data", response.data);
 
       // Check the 'error' property in the response data
       if (response.data && response.data.error) {
@@ -101,11 +102,12 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
         code: query,
         dbType: dbType.toUpperCase()
       });
-
+      console.log("response.data", response);
       // Check for API-level errors in the submission response data
       if (response.data && response.data.error) {
          setError(response.data.error);
       } else if (response.data) {
+        console.log("response.data", response.data);
         // Call the parent's onSubmit handler with the successful submission data
         // The parent (QuestionDetail) is responsible for updating the submissions list
         onSubmit(response.data);

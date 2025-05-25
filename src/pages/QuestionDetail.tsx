@@ -48,7 +48,7 @@ interface Question {
 interface DisplaySubmission {
   id: string;
   timestamp: string;
-  status: 'Correct' | 'Wrong' | 'Error' | 'Unattempted';
+  status: 'Correct' | 'Wrong' | 'Error' | 'Unattempted' | 'mismatch';
   runtime: number;
   query: string;
 }
@@ -78,7 +78,7 @@ const QuestionDetail = () => {
         const transformedSubmissions: DisplaySubmission[] = data.submissions.map((sub: SubmissionResponse) => ({
           id: `sub-${sub.id}`,
           timestamp: sub.submittedAt,
-          status: sub.status === 'passed' ? 'Correct' : sub.status === 'error' ? 'Error' : sub.status === 'failed' ? 'Wrong' : 'Unattempted', // Map API status to display status
+          status: sub.status === 'passed' ? 'Correct' : sub.status === 'error' ? 'Error' : sub.status === 'failed' ? 'Wrong' : 'mismatch', // Map API status to display status
           runtime: sub.runTime,
           query: sub.code
         }));
@@ -103,10 +103,11 @@ const QuestionDetail = () => {
     const sub = response.submission;
 
     // Map API status to display status
-    let displayStatus: 'Correct' | 'Wrong' | 'Error' | 'Unattempted';
+    let displayStatus: 'Correct' | 'Wrong' | 'Error' | 'Unattempted' | 'mismatch';
     if (sub.status === 'passed') displayStatus = 'Correct';
     else if (sub.status === 'error') displayStatus = 'Error';
     else if (sub.status === 'failed') displayStatus = 'Wrong';
+    else if (sub.status === 'mismatch') displayStatus = 'mismatch';
     else displayStatus = 'Unattempted';
 
     const newSubmission: DisplaySubmission = {

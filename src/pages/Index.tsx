@@ -235,7 +235,7 @@ function Index() {
             title: question.title,
             type: (question.dbType === 'MySQL' ? 'SQL' : question.dbType) as 'SQL' | 'PostgreSQL',
             difficulty: (question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1)) as 'Beginner' | 'Intermediate' | 'Advanced',
-            status: 'Unattempted' as 'Solved' | 'Wrong' | 'Unattempted',
+            status: 'mismatch' as 'Solved' | 'Wrong'  | 'mismatch',
             topic: {
               id: question.topic.id,
               name: question.topic.name
