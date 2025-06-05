@@ -13,16 +13,19 @@ interface QueryResultRow {
 
 // Define the expected structure of a submission response from the API
 interface SubmissionResponse {
-  id: number;
-  code: string;
-  dbType: string;
-  score: number;
-  status: string; // e.g., 'passed', 'error', 'failed'
-  result: string; // Keeping as 'any' for now as the structure can vary. If a consistent schema is available, define a type for it.
-  error: string | null;
-  runTime: number;
-  submittedAt: string;
-  userId: number;
+  message: string;
+  submission: {
+    id: number;
+    code: string;
+    dbType: string;
+    score?: number;
+    status: string; // e.g., 'passed', 'error', 'failed'
+    result?: any; // The structure of 'result' can vary or be null
+    error: string | null;
+    runTime: number;
+    submittedAt: string;
+    userId: number;
+  };
 }
 
 // Define the expected structure of a run query response from the API
@@ -41,7 +44,7 @@ interface SqlEditorProps {
 }
 
 const SqlEditor: React.FC<SqlEditorProps> = ({
-  defaultQuery = "SELECT * FROM employees\nWHERE department = 'Engineering'\nORDER BY hire_date DESC;",
+  defaultQuery = "",
   onSubmit
 }) => {
   const { id } = useParams<{ id: string }>();
@@ -50,6 +53,7 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
   const [isExecuting, setIsExecuting] = useState<boolean>(false);
   const [results, setResults] = useState<QueryResultRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [submittedQueryDisplay, setSubmittedQueryDisplay] = useState<string | null>(null);
   const resizerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -58,6 +62,7 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
     setIsExecuting(true);
     setError(null);
     setResults(null); // Clear previous results on new run
+    setSubmittedQueryDisplay(null); // Explicitly clear submitted query display
     
     try {
       // Use the RunQueryResponse interface for typing
@@ -91,10 +96,12 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
 
   const submitQuery = async () => {
     if (!onSubmit) return; // Ensure onSubmit prop is provided
-    
+
     setIsExecuting(true);
-    setError(null); // Clear previous errors on new submission attempt
-    
+    setError(null); // Clear previous errors
+    setResults(null); // Clear previous run query results
+    setSubmittedQueryDisplay(null); // Clear previous submitted query display
+
     try {
       // Use the correct submit endpoint and type the response
       const response = await apiInstance.post<SubmissionResponse>('/api/submission/querys/submit', {
@@ -102,24 +109,37 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
         code: query,
         dbType: dbType.toUpperCase()
       });
+
       console.log("response.data", response);
-      // Check for API-level errors in the submission response data
-      if (response.data && response.data.error) {
-         setError(response.data.error);
-      } else if (response.data) {
-        console.log("response.data", response.data);
-        // Call the parent's onSubmit handler with the successful submission data
-        // The parent (QuestionDetail) is responsible for updating the submissions list
-        onSubmit(response.data);
-        setError(null); // Clear any previous submission errors from the form
+
+      if (response.data) {
+        // Check the nested 'submission.error' property
+        if (response.data.submission && response.data.submission.error) {
+           // On submission error, set error state
+           setError(`Submission Error: ${response.data.submission.error}`);
+           setResults(null); // Ensure results are null
+           setSubmittedQueryDisplay(null); // Ensure submitted query display is null
+        } else {
+          // On successful submission (or submission without a specific error message in submission object)
+          console.log("response.data", response.data);
+          setResults(null); // Clear previous run query results
+          setError(null); // Clear any previous errors
+          setSubmittedQueryDisplay(query); // Set the submitted query for display
+          // Pass the full API response data (which includes the nested submission) to the parent
+          onSubmit(response.data); 
+        }
       } else {
          setError('Unexpected response format from Submit API');
+         setResults(null); // Ensure results are null
+         setSubmittedQueryDisplay(null); // Ensure submitted query display is null
       }
 
     } catch (err) {
       // Handle network or other request errors
       const axiosError = err as AxiosError;
-      setError(axiosError.message || 'An error occurred while submitting the solution');
+      setError(`Request Error: ${axiosError.message || 'An error occurred while submitting the solution'}`);
+      setResults(null); // Ensure results are null
+      setSubmittedQueryDisplay(null); // Ensure submitted query display is null
     } finally {
       setIsExecuting(false);
     }
@@ -181,17 +201,19 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
         </div>
         
         <div className="flex gap-2">
-          <Button 
+          <Button
             onClick={runQuery}
             disabled={isExecuting}
+            type="button"
             variant="outline"
             className="border-datacareer-blue text-datacareer-blue hover:bg-datacareer-blue hover:text-white"
           >
             {isExecuting ? 'Running...' : 'Run Query'}
           </Button>
-          <Button 
+          <Button
             onClick={submitQuery}
             disabled={isExecuting}
+            type="button"
             className="bg-datacareer-blue hover:bg-datacareer-darkBlue"
           >
             Submit
@@ -224,10 +246,16 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
           <div className="w-8 h-1 bg-gray-300 rounded"></div>
         </div>
         <div ref={resultsRef} className="h-64 overflow-auto">
-          {isExecuting && !results && !error && (
+          {isExecuting && !results && !error && !submittedQueryDisplay && (
              <div className="p-4 text-center text-gray-500">Executing query...</div>
           )}
-          {error ? (
+          {/* Display Submitted Query if successful */}
+          {submittedQueryDisplay ? (
+            <div className="p-4 bg-gray-50 border-l-4 border-blue-500 text-gray-800">
+              <p className="font-medium">Submitted Query:</p>
+              <pre className="whitespace-pre-wrap break-all text-sm font-mono">{submittedQueryDisplay}</pre>
+            </div>
+          ) : error ? (
             <div className="p-4 bg-red-50 text-red-800 border-l-4 border-red-500">
               <p className="font-medium">Error:</p>
               <p>{error}</p>

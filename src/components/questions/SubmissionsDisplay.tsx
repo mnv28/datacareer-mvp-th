@@ -7,6 +7,8 @@ interface Submission {
   status: 'Correct' | 'Wrong' | 'Error' |  'mismatch';
   runtime: number;
   query: string;
+  result?: any;
+  error?: string | null;
 }
 
 interface SubmissionsDisplayProps {
@@ -29,6 +31,8 @@ const getStatusBadgeClass = (status: string) => {
 };
 
 const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) => {
+  console.log("submissions = ",submissions);
+  
   const [selectedSubmission, setSelectedSubmission] = React.useState<Submission | null>(
     submissions.length > 0 ? submissions[0] : null
   );
@@ -37,17 +41,32 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
   const [toastType, setToastType] = React.useState<'success' | 'error'>('success');
 
   useEffect(() => {
+    if (submissions.length > 0) {
+      // Always update the selectedSubmission with the latest one (first in array)
+      setSelectedSubmission(submissions[0]);
+    } else {
+      setSelectedSubmission(null);
+    }
+  }, [submissions]);
+  
+
+  // Existing useEffect for toast messages, triggered by selectedSubmission changes
+  useEffect(() => {
     if (selectedSubmission) {
       setShowToast(true);
+      // Use the status from the selected submission for toast message logic
       if (selectedSubmission.status === 'Correct') {
         setToastType('success');
         setToastMessage('Your query matches the expected output!');
       } else if (selectedSubmission.status === 'mismatch') {
         setToastType('error');
         setToastMessage("Your query's output doesn't match with the solution's output!");
-      } else {
+      } else if (selectedSubmission.status === 'Error') {
         setToastType('error');
         setToastMessage('There was an error executing your query.');
+      } else if (selectedSubmission.status === 'Wrong') {
+         setToastType('error');
+         setToastMessage('Your query returned incorrect results.');
       }
 
       // Auto-hide toast after 5 seconds
@@ -56,13 +75,16 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
       }, 5000);
 
       return () => clearTimeout(timer);
+    } else {
+       // If no submission is selected, hide the toast
+       setShowToast(false);
     }
-  }, [selectedSubmission]);
+  }, [selectedSubmission]); // Depend on selectedSubmission
 
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium text-datacareer-darkBlue mb-3">Your Submissions</h3>
-      
+
       {submissions.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-1 border rounded-lg shadow-sm overflow-hidden">
@@ -71,16 +93,19 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
             </div>
             <div className="divide-y max-h-80 overflow-y-auto">
               {submissions.map((submission) => (
-                <div 
+               
+                
+                <div
                   key={submission.id}
                   onClick={() => setSelectedSubmission(submission)}
                   className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
                     selectedSubmission?.id === submission.id ? 'bg-blue-50' : ''
                   }`}
                 >
+                 
                   <div className="flex justify-between items-center">
                     <div className="text-xs text-gray-500">
-                      {new Date(submission.timestamp).toLocaleString()}
+                      {submission.timestamp ? new Date(submission.timestamp).toLocaleString() : 'Invalid Date'}
                     </div>
                     <div className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeClass(submission.status)}`}>
                       {submission.status}
@@ -93,14 +118,14 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
               ))}
             </div>
           </div>
-          
+
           <div className="md:col-span-2 border rounded-lg shadow-sm overflow-hidden">
             <div className="bg-gray-50 p-3 border-b">
               <h4 className="text-sm font-medium text-gray-700">Submission Details</h4>
             </div>
             {selectedSubmission ? (
               <div className="p-4">
-                {showToast && (
+                {showToast && selectedSubmission.status !== 'Correct' && selectedSubmission.status !== 'mismatch' && (
                   <div className="mb-4">
                     <Toast
                       message={toastMessage}
@@ -112,7 +137,7 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
                 <div className="flex flex-wrap justify-between mb-3">
                   <div className="mb-2 mr-4">
                     <div className="text-xs text-gray-500">Submitted at</div>
-                    <div className="text-sm">{new Date(selectedSubmission.timestamp).toLocaleString()}</div>
+                    <div className="text-sm">{selectedSubmission.timestamp ? new Date(selectedSubmission.timestamp).toLocaleString() : 'Invalid Date'}</div>
                   </div>
                   <div className="mb-2 mr-4">
                     <div className="text-xs text-gray-500">Status</div>
@@ -125,24 +150,57 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
                     <div className="text-sm">{selectedSubmission.runtime} ms</div>
                   </div>
                 </div>
-                
-                {/* <div className="mt-6">
-                  <div className="text-xs text-gray-500 mb-1 font-semibold">Expected Output</div>
-                  <div className="bg-gray-50 border rounded-md p-3 overflow-x-auto">
-                    <pre className="text-xs font-mono text-gray-800">
-customer_id, customer_name, total_spent, order_count, avg_order_value
+
+                {selectedSubmission.error ? (
+                  <div className="mt-4">
+                    <div className="text-xs text-gray-500 mb-1 font-semibold">Error Details</div>
+                    <pre className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative whitespace-pre-wrap break-all">
+                      {selectedSubmission.error}
                     </pre>
                   </div>
-                </div>
-                
-                <div className="mt-4">
-                  <div className="text-xs text-gray-500 mb-1 font-semibold">Your Output</div>
-                  <div className="bg-gray-50 border rounded-md p-3 overflow-x-auto">
-                    <pre className="text-xs font-mono text-gray-800">
--- Your output will be shown here after running the query --
-                    </pre>
-                  </div>
-                </div> */}
+                ) : selectedSubmission.result && Array.isArray(selectedSubmission.result) ? (
+                   <div className="mt-4">
+                     <div className="text-xs text-gray-500 mb-1 font-semibold">Query Output</div>
+                     {selectedSubmission.result.length > 0 ? (
+                       <div className="bg-gray-50 border rounded-md p-3 overflow-x-auto">
+                         <table className="min-w-full divide-y divide-gray-200">
+                           <thead>
+                             <tr>
+                               {Object.keys(selectedSubmission.result[0] || {}).map(key => (
+                                 <th key={key} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                   {key}
+                                 </th>
+                               ))}
+                             </tr>
+                           </thead>
+                           <tbody className="bg-white divide-y divide-gray-200">
+                             {selectedSubmission.result.map((row: any, rowIndex: number) => (
+                               <tr key={rowIndex}>
+                                 {Object.values(row).map((value: any, colIndex: number) => (
+                                   <td key={colIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                     {value !== null && value !== undefined ? String(value) : 'NULL'}
+                                   </td>
+                                 ))}
+                               </tr>
+                             ))}
+                           </tbody>
+                         </table>
+                       </div>
+                     ) : (
+                       <div className="bg-gray-50 border rounded-md p-3 overflow-x-auto text-gray-500 text-sm">
+                         (Empty result set)
+                       </div>
+                     )}
+                   </div>
+                ) : (
+                   <div className="mt-4">
+                    <div className="text-xs text-gray-500 mb-1 font-semibold">Query Output</div>
+                     <div className="bg-gray-50 border rounded-md p-3 overflow-x-auto text-gray-500 text-sm">
+                       Run query to see results or check submission status for errors.
+                     </div>
+                   </div>
+                )}
+
               </div>
             ) : (
               <div className="p-4 text-center text-gray-500">

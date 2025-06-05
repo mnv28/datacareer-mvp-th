@@ -13,16 +13,19 @@ import { AxiosError } from 'axios'; // Import AxiosError for better type handlin
 
 // Define the expected structure of a submission response from the API
 interface SubmissionResponse {
-  id: number;
-  code: string;
-  dbType: string;
-  score?: number; // Score might be calculated asynchronously or not always present immediately
-  status: string; // e.g., 'passed', 'error', 'failed', 'pending'
-  result?: string; // The structure of 'result' can vary or be null, using 'any' with caution here.
-  error: string | null;
-  runTime: number;
-  submittedAt: string;
-  userId: number;
+  message: string;
+  submission: {
+    id: number;
+    code: string;
+    dbType: string;
+    score?: number;
+    status: string; // e.g., 'passed', 'error', 'failed', 'pending'
+    result?: any; // The structure of 'result' can vary or be null
+    error: string | null;
+    runTime: number;
+    submittedAt: string;
+    userId: number;
+  };
 }
 
 interface Question {
@@ -43,14 +46,20 @@ interface Question {
   topic: {
     name: string;
   };
+  dynamicTableInfo: {
+    schemaImageUrl: string;
+    schemaContent: string;
+  };
 }
 
 interface DisplaySubmission {
   id: string;
   timestamp: string;
-  status: 'Correct' | 'Wrong' | 'Error' | 'Unattempted' | 'mismatch';
+  status: 'Correct' | 'Wrong' | 'Error' | 'mismatch';
   runtime: number;
   query: string;
+  result?: any;
+  error?: string | null;
 }
 
 const QuestionDetail = () => {
@@ -60,64 +69,81 @@ const QuestionDetail = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("question");
+console.log("submissions SubmissionsDisplay = ",submissions);
 
-  useEffect(() => {
-    const fetchQuestionDetails = async () => {
-      try {
-        setLoading(true);
-        const response = await apiInstance.get(`/api/question/${id}`);
-        const data = response.data;
+  const fetchQuestionDetails = async () => {
+    try {
+      setLoading(true);
+      const response = await apiInstance.get(`/api/question/${id}`);
+      const data = response.data;
 
-        // Transform the question data
-        const transformedQuestion: Question = {
-          ...data.question,
-          difficulty: data.question.difficulty.charAt(0).toUpperCase() + data.question.difficulty.slice(1) as 'Beginner' | 'Intermediate' | 'Advanced'
-        };
+      // Transform the question data
+      const transformedQuestion: Question = {
+        ...data.question,
+        difficulty: data.question.difficulty.charAt(0).toUpperCase() + data.question.difficulty.slice(1) as 'Beginner' | 'Intermediate' | 'Advanced'
+      };
 
-        // Transform the submissions data from the API response format to DisplaySubmission format
-        const transformedSubmissions: DisplaySubmission[] = data.submissions.map((sub: SubmissionResponse) => ({
+      // Transform the submissions data from the API response format to DisplaySubmission format
+      const transformedSubmissions: DisplaySubmission[] = data.submissions
+        .filter((sub: any) => sub !== null && sub !== undefined) // Filter out null/undefined entries
+        .map((sub: any) => ({
           id: `sub-${sub.id}`,
           timestamp: sub.submittedAt,
           status: sub.status === 'passed' ? 'Correct' : sub.status === 'error' ? 'Error' : sub.status === 'failed' ? 'Wrong' : 'mismatch', // Map API status to display status
           runtime: sub.runTime,
-          query: sub.code
+          query: sub.code,
+          result: sub.result,
+          error: sub.error,
         }));
 
-        setQuestion(transformedQuestion);
-        setSubmissions(transformedSubmissions);
-      } catch (err) { // Keeping any here for broader error handling, can refine if needed.
-        setError(err.message || 'Failed to fetch question details.');
-        console.error("Error fetching question details:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setQuestion(transformedQuestion);
+      setSubmissions(transformedSubmissions);
+    } catch (err) { // Keeping any here for broader error handling, can refine if needed.
+      setError(err.message || 'Failed to fetch question details.');
+      console.error("Error fetching question details:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (id) {
       fetchQuestionDetails();
     }
   }, [id]);
 
   // This function is now called by SqlEditor after a successful submission API call
-  const handleSubmit = (response: { message: string; submission: SubmissionResponse }) => {
-    const sub = response.submission;
+  const handleSubmit = (submissionData: SubmissionResponse) => {
+    console.log("submissionData received in handleSubmit = ", submissionData);
 
-    // Map API status to display status
-    let displayStatus: 'Correct' | 'Wrong' | 'Error' | 'Unattempted' | 'mismatch';
-    if (sub.status === 'passed') displayStatus = 'Correct';
-    else if (sub.status === 'error') displayStatus = 'Error';
-    else if (sub.status === 'failed') displayStatus = 'Wrong';
-    else if (sub.status === 'mismatch') displayStatus = 'mismatch';
-    else displayStatus = 'Unattempted';
+    // Ensure submissionData and submissionData.submission are valid
+    if (!submissionData || !submissionData.submission) {
+      console.error("Invalid submission data received:", submissionData);
+      // Optionally, handle this error in the UI
+      return;
+    }
+
+    const apiSubmission = submissionData.submission; // Access the nested submission object
+
+    // Map API status to display status and create DisplaySubmission object
+    let displayStatus: 'Correct' | 'Wrong' | 'Error' | 'mismatch';
+    if (apiSubmission.status === 'passed') displayStatus = 'Correct';
+    else if (apiSubmission.status === 'error') displayStatus = 'Error';
+    else if (apiSubmission.status === 'failed') displayStatus = 'Wrong';
+    else displayStatus = 'mismatch'; // Default to mismatch if status is unexpected
 
     const newSubmission: DisplaySubmission = {
-      id: `sub-${sub.id}`,
-      timestamp: sub.submittedAt,
+      id: `sub-${apiSubmission.id}`,
+      timestamp: apiSubmission.submittedAt,
       status: displayStatus,
-      runtime: sub.runTime,
-      query: sub.code
+      runtime: apiSubmission.runTime,
+      query: apiSubmission.code,
+      // Ensure result and error are correctly mapped
+      result: apiSubmission.result, 
+      error: apiSubmission.error,
     };
 
+    console.log("Adding newSubmission to state = ", newSubmission);
     setSubmissions(prev => [newSubmission, ...prev]);
     setActiveTab("submissions");
   };
@@ -171,7 +197,7 @@ const QuestionDetail = () => {
             <div className="h-full">
               <QuestionTabs
                 question={question.questionContent}
-                schema={<SchemaDisplay tables={[]} erdImage={question.schemaImage} schema={question.schemaContent} />}
+                schema={<SchemaDisplay tables={[]} erdImage={question.dynamicTableInfo.schemaImageUrl} schema={question.dynamicTableInfo.schemaContent} />}
                 solutions={<SolutionsDisplay solution={question.solution} />}
                 submissions={<SubmissionsDisplay submissions={submissions} />}
                 activeTab={activeTab}

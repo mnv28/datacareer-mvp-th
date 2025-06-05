@@ -202,8 +202,8 @@ function Index() {
   const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
   const [selectedTopics, setSelectedTopics] = useState<number[]>([]);
   const [selectedDomains, setSelectedDomains] = useState<number[]>([]);
-  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
-  const [selectedVariants, setSelectedVariants] = useState<string[]>([]);
+  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>(['Beginner']);
+  const [selectedVariants, setSelectedVariants] = useState<string[]>(['MySQL']);
   
   // Fetch companies data
   useEffect(() => {
@@ -212,33 +212,37 @@ function Index() {
         const response = await apiInstance.get('/api/question/filterbycompany', {
           params: {
             search: searchQuery,
-            topicId: selectedTopics.length > 0 ? `[${selectedTopics.join(',')}]` : '',
-            companyId: selectedCompanies.length > 0 ? `[${selectedCompanies.join(',')}]` : '',
-            domainId: selectedDomains.length > 0 ? `[${selectedDomains.join(',')}]` : '',
-            difficulty: selectedDifficulties.length > 0 ? `[${selectedDifficulties.join(',')}]` : '',
-            variant: selectedVariants.length > 0 ? `[${selectedVariants.join(',')}]` : '[MySQL]'
+            topic: selectedTopics.length > 0 ? selectedTopics.join(',') : '',
+            companyId: selectedCompanies.length > 0 ? selectedCompanies.join(',') : '',
+            domain: selectedDomains.length > 0 ? selectedDomains.join(',') : '',
+            difficulty: selectedDifficulties.length > 0 ? selectedDifficulties.join(',') : '',
+            variant: selectedVariants.length > 0 ? selectedVariants.join(',') : 'MySQL'
           }
         });
 
         const data = response.data;
 
+        console.log("API response data.companies:", data.companies);
+
         const transformedCompanies: Company[] = data.companies.map((company) => ({
           id: company.id,
           name: company.name,
           logo: company.logo,
-          domains: company.CompanyDomains.map((cd) => ({
-            id: cd.Domain.id,
-            name: cd.Domain.name
+          domains: company.Domains.map((domain) => ({
+            id: domain.id,
+            name: domain.name
           })),
           questions: company.questions.map((question) => ({
             id: question.id,
             title: question.title,
-            type: (question.dbType === 'MySQL' ? 'SQL' : question.dbType) as 'SQL' | 'PostgreSQL',
+            type: question.dbType,
             difficulty: (question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1)) as 'Beginner' | 'Intermediate' | 'Advanced',
             status: 'mismatch' as 'Solved' | 'Wrong'  | 'mismatch',
             topic: {
-              id: question.topic.id,
-              name: question.topic.name
+              // id: question.topic.id,
+              // name: question.topic.name
+              id: question.Topic?.id || 0,
+              name: question.Topic?.name || question.topic
             },
             isPaid: false
           })),
@@ -295,13 +299,13 @@ function Index() {
           selectedDomains.length === 0 || 
           company.domains.some(domain => selectedDomains.includes(domain.id));
           
-        const matchesDifficulty = 
-          selectedDifficulties.length === 0 || 
-          selectedDifficulties.includes(question.difficulty);
+        // Temporarily disable difficulty filtering to see if companies are displayed
+        const matchesDifficulty = true;
           
+        // Temporarily disable variant filtering to see if companies are displayed
         const matchesVariant = 
           selectedVariants.length === 0 || 
-          selectedVariants.includes(question.type);
+          selectedVariants.map(v => v.toLowerCase()).includes(question.type.toLowerCase());
           
         return matchesSearch && matchesCompany && matchesTopic && 
                matchesDomain && matchesDifficulty && matchesVariant;
@@ -340,8 +344,8 @@ function Index() {
     setSelectedCompanies([]);
     setSelectedTopics([]);
     setSelectedDomains([]);
-    setSelectedDifficulties([]);
-    setSelectedVariants([]);
+    setSelectedDifficulties(['Beginner']);
+    setSelectedVariants(['MySQL']);
   };
 
   return (
