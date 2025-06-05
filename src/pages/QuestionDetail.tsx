@@ -85,8 +85,8 @@ console.log("submissions SubmissionsDisplay = ",submissions);
 
       // Transform the submissions data from the API response format to DisplaySubmission format
       const transformedSubmissions: DisplaySubmission[] = data.submissions
-        .filter((sub: any) => sub !== null && sub !== undefined) // Filter out null/undefined entries
-        .map((sub: any) => ({
+        .filter((sub) => sub !== null && sub !== undefined) // Filter out null/undefined entries
+        .map((sub) => ({
           id: `sub-${sub.id}`,
           timestamp: sub.submittedAt,
           status: sub.status === 'passed' ? 'Correct' : sub.status === 'error' ? 'Error' : sub.status === 'failed' ? 'Wrong' : 'mismatch', // Map API status to display status
