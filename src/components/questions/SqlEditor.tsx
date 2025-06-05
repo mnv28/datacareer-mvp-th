@@ -119,6 +119,7 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
            setError(`Submission Error: ${response.data.submission.error}`);
            setResults(null); // Ensure results are null
            setSubmittedQueryDisplay(null); // Ensure submitted query display is null
+            onSubmit(response.data); 
         } else {
           // On successful submission (or submission without a specific error message in submission object)
           console.log("response.data", response.data);
