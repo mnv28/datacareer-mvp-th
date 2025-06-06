@@ -36,6 +36,8 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
   const [selectedSubmission, setSelectedSubmission] = React.useState<Submission | null>(
     submissions.length > 0 ? submissions[0] : null
   );
+  console.log("selectedSubmission = ",selectedSubmission);
+  
   const [showToast, setShowToast] = React.useState(false);
   const [toastMessage, setToastMessage] = React.useState('');
   const [toastType, setToastType] = React.useState<'success' | 'error'>('success');
@@ -123,7 +125,7 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
             <div className="bg-gray-50 p-3 border-b">
               <h4 className="text-sm font-medium text-gray-700">Submission Details</h4>
             </div>
-            {selectedSubmission ? (
+           {submissions.length > 0 ? (
               <div className="p-4">
                 {showToast && selectedSubmission.status !== 'Correct' && selectedSubmission.status !== 'mismatch' && (
                   <div className="mb-4">
@@ -187,16 +189,20 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
                          </table>
                        </div>
                      ) : (
-                       <div className="bg-gray-50 border rounded-md p-3 overflow-x-auto text-gray-500 text-sm">
-                         (Empty result set)
+                       <div className="bg-gray-50 border rounded-md p-3 overflow-x-auto text-gray-800 text-sm">
+                         <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                           {selectedSubmission.query}
+                         </pre>
                        </div>
                      )}
                    </div>
                 ) : (
                    <div className="mt-4">
                     <div className="text-xs text-gray-500 mb-1 font-semibold">Query Output</div>
-                     <div className="bg-gray-50 border rounded-md p-3 overflow-x-auto text-gray-500 text-sm">
-                       Run query to see results or check submission status for errors.
+                     <div className="bg-gray-50 border rounded-md p-3 overflow-x-auto text-gray-800 text-sm">
+                       <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                         {selectedSubmission.query}
+                       </pre>
                      </div>
                    </div>
                 )}
