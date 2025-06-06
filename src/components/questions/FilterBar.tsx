@@ -69,7 +69,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
   }, [dispatch]);
 
   const difficulties = ['Beginner', 'Intermediate', 'Advanced'];
-  const variants = ['SQL', 'Python', 'PostgreSQL', 'MySQL'];
+  const variants = ['MySQL'];
 
   const handleMultiSelect = <T extends number | string>(
     value: T,

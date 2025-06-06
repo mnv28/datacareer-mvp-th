@@ -202,8 +202,8 @@ function Index() {
   const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
   const [selectedTopics, setSelectedTopics] = useState<number[]>([]);
   const [selectedDomains, setSelectedDomains] = useState<number[]>([]);
-  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>(['Beginner']);
-  const [selectedVariants, setSelectedVariants] = useState<string[]>(['MySQL']);
+  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
+  const [selectedVariants, setSelectedVariants] = useState<string[]>([]);
   
   // Fetch companies data
   useEffect(() => {
@@ -341,11 +341,12 @@ function Index() {
   };
 
   const handleClearAll = () => {
+    setSearchQuery('');
     setSelectedCompanies([]);
     setSelectedTopics([]);
     setSelectedDomains([]);
-    setSelectedDifficulties(['Beginner']);
-    setSelectedVariants(['MySQL']);
+    setSelectedDifficulties([]);
+    setSelectedVariants([]);
   };
 
   return (
