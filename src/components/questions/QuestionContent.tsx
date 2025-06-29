@@ -1,20 +1,42 @@
-import React from 'react';
-import DOMPurify from 'dompurify';
+import React, { useEffect, useRef } from "react";
 
-interface QuestionContentProps {
-  content: string;
-}
+const TAILWIND_TABLE_CLASSES = "min-w-full border border-gray-200";
+const TAILWIND_TH_CLASSES = "px-4 py-2 border font-bold text-left bg-gray-50";
+const TAILWIND_TD_CLASSES = "px-4 py-2 border";
 
-const QuestionContent: React.FC<QuestionContentProps> = ({ content }) => {
-  // Sanitize the HTML content to prevent XSS attacks
-  const sanitizedContent = DOMPurify.sanitize(content);
+const QuestionContent: React.FC<{ content: any }> = ({ content }) => {
+  const tableRef = useRef<HTMLDivElement>(null);
 
-  return (
-    <div 
-      className="prose max-w-none prose-headings:font-bold prose-headings:text-datacareer-darkBlue prose-p:text-gray-700 prose-strong:text-datacareer-darkBlue prose-ul:list-disc prose-ol:list-decimal prose-li:text-gray-700 prose-table:border prose-table:border-gray-200 prose-th:bg-gray-50 prose-th:p-2 prose-td:p-2 prose-td:border prose-td:border-gray-200"
-      dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-    />
-  );
+  useEffect(() => {
+    if (
+      typeof content === "string" &&
+      content.trim().startsWith("<table") &&
+      tableRef.current
+    ) {
+      // Find the table and add Tailwind classes
+      const table = tableRef.current.querySelector("table");
+      if (table) table.className = TAILWIND_TABLE_CLASSES;
+
+      table?.querySelectorAll("th").forEach((th) => {
+        th.className = TAILWIND_TH_CLASSES;
+      });
+      table?.querySelectorAll("td").forEach((td) => {
+        td.className = TAILWIND_TD_CLASSES;
+      });
+    }
+  }, [content]);
+
+  // Only render as HTML if it's a table, otherwise show as plain text
+  if (typeof content === "string" && content.trim().startsWith("<table")) {
+    return (
+      <div ref={tableRef} className="overflow-x-auto">
+        <div dangerouslySetInnerHTML={{ __html: content }} />
+      </div>
+    );
+  }
+
+  // For everything else, show as plain text (strip HTML tags)
+  return <div>{typeof content === "string" ? content.replace(/<[^>]+>/g, "") : content}</div>;
 };
 
-export default QuestionContent; 
+export default QuestionContent;

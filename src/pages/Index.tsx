@@ -180,8 +180,8 @@ import { apiInstance } from "@/api/axiosApi";
 
 function Index() {
   const [companies, setCompanies] = useState<Company[]>([]);
-  console.log("company=",companies);
-  
+  console.log("company=", companies);
+
   const [loadingCompanies, setLoadingCompanies] = useState(true);
   const [errorCompanies, setErrorCompanies] = useState<string | null>(null);
 
@@ -204,7 +204,7 @@ function Index() {
   const [selectedDomains, setSelectedDomains] = useState<number[]>([]);
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
   const [selectedVariants, setSelectedVariants] = useState<string[]>([]);
-  
+
   // Fetch companies data
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -232,20 +232,26 @@ function Index() {
             id: domain.id,
             name: domain.name
           })),
-          questions: company.questions.map((question) => ({
-            id: question.id,
-            title: question.title,
-            type: question.dbType,
-            difficulty: (question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1)) as 'Beginner' | 'Intermediate' | 'Advanced',
-            status: 'mismatch' as 'Solved' | 'Wrong'  | 'mismatch',
-            topic: {
-              // id: question.topic.id,
-              // name: question.topic.name
-              id: question.Topic?.id || 0,
-              name: question.Topic?.name || question.topic
-            },
-            isPaid: false
-          })),
+          questions: company.questions
+            .slice()
+            .sort((a, b) => {
+              const order = { Beginner: 0, Intermediate: 1, Advanced: 2 };
+              const diffA = a.difficulty.charAt(0).toUpperCase() + a.difficulty.slice(1);
+              const diffB = b.difficulty.charAt(0).toUpperCase() + b.difficulty.slice(1);
+              return order[diffA] - order[diffB];
+            })
+            .map((question) => ({
+              id: question.id,
+              title: question.title,
+              type: question.dbType,
+              difficulty: (question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1)) as 'Beginner' | 'Intermediate' | 'Advanced',
+              status: 'mismatch' as 'Solved' | 'Wrong' | 'mismatch',
+              topic: {
+                id: question.Topic?.id || 0,
+                name: question.Topic?.name || question.topic
+              },
+              isPaid: false
+            })),
         }));
 
         setCompanies(transformedCompanies);
@@ -282,35 +288,35 @@ function Index() {
     .map(company => {
       // Filter questions based on all filter criteria
       const filteredQuestions = company.questions.filter(question => {
-        const matchesSearch = 
-          searchQuery === '' || 
+        const matchesSearch =
+          searchQuery === '' ||
           question.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           company.name.toLowerCase().includes(searchQuery.toLowerCase());
-          
-        const matchesCompany = 
-          selectedCompanies.length === 0 || 
+
+        const matchesCompany =
+          selectedCompanies.length === 0 ||
           selectedCompanies.includes(company.id);
-          
-        const matchesTopic = 
-          selectedTopics.length === 0 || 
+
+        const matchesTopic =
+          selectedTopics.length === 0 ||
           selectedTopics.includes(question.topic.id);
-          
-        const matchesDomain = 
-          selectedDomains.length === 0 || 
+
+        const matchesDomain =
+          selectedDomains.length === 0 ||
           company.domains.some(domain => selectedDomains.includes(domain.id));
-          
+
         // Temporarily disable difficulty filtering to see if companies are displayed
         const matchesDifficulty = true;
-          
+
         // Temporarily disable variant filtering to see if companies are displayed
-        const matchesVariant = 
-          selectedVariants.length === 0 || 
+        const matchesVariant =
+          selectedVariants.length === 0 ||
           selectedVariants.map(v => v.toLowerCase()).includes(question.type.toLowerCase());
-          
-        return matchesSearch && matchesCompany && matchesTopic && 
-               matchesDomain && matchesDifficulty && matchesVariant;
+
+        return matchesSearch && matchesCompany && matchesTopic &&
+          matchesDomain && matchesDifficulty && matchesVariant;
       });
-      
+
       // Return the company with filtered questions
       return {
         ...company,
@@ -319,7 +325,7 @@ function Index() {
     })
     // Only include companies that have questions after filtering
     .filter(company => company.questions.length > 0);
-    
+
   // Calculate total counts from the companies data (needed for ProgressSummary)
   const totalCounts = {
     total: companies.reduce((sum, company) => sum + company.questions.length, 0),
@@ -348,6 +354,15 @@ function Index() {
     setSelectedDifficulties([]);
     setSelectedVariants([]);
   };
+  
+const handleApplyFilters = (filters) => {
+  setSearchQuery(filters.searchQuery);
+  setSelectedCompanies(filters.selectedCompanies);
+  setSelectedTopics(filters.selectedTopics);
+  setSelectedDomains(filters.selectedDomains);
+  setSelectedDifficulties(filters.selectedDifficulties);
+  setSelectedVariants(filters.selectedVariants);
+};
 
   return (
     <MainLayout>
@@ -358,7 +373,7 @@ function Index() {
             Practice SQL interview questions from top tech companies
           </p>
         </div>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3">
             <FilterBar
@@ -375,8 +390,9 @@ function Index() {
               selectedVariants={selectedVariants}
               setSelectedVariants={setSelectedVariants}
               onClearAll={handleClearAll}
+              onApply={handleApplyFilters}
             />
-            
+
             {loadingCompanies && <p>Loading companies...</p>}
             {errorCompanies && <p className="text-red-500">Error loading companies: {errorCompanies}</p>}
             {!loadingCompanies && !errorCompanies && (filteredCompanies.length > 0 ? (
@@ -385,7 +401,7 @@ function Index() {
               <p>No companies found matching your criteria.</p>
             ))}
           </div>
-          
+
           <div className="lg:col-span-1">
             {loadingProgress && <p>Loading progress...</p>}
             {errorProgress && <p className="text-red-500">Error loading progress: {errorProgress}</p>}

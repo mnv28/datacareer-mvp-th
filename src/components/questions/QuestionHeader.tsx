@@ -10,6 +10,7 @@ interface QuestionHeaderProps {
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   previousId: number | null;
   nextId: number | null;
+  isLoading?: boolean;
 }
 
 const getDifficultyColor = (difficulty: QuestionHeaderProps['difficulty']) => {
@@ -29,7 +30,8 @@ const QuestionHeader: React.FC<QuestionHeaderProps> = ({
   topic,
   difficulty,
   previousId,
-  nextId
+  nextId,
+  isLoading = false
 }) => {
   return (
     <div className="bg-white p-4 rounded-lg shadow-md mb-4">
@@ -55,7 +57,7 @@ const QuestionHeader: React.FC<QuestionHeaderProps> = ({
               variant="outline" 
               size="sm" 
               className="flex items-center"
-              disabled={!previousId}
+              disabled={!previousId || isLoading}
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
               Previous
@@ -67,7 +69,7 @@ const QuestionHeader: React.FC<QuestionHeaderProps> = ({
               variant="outline" 
               size="sm" 
               className="flex items-center"
-              disabled={!nextId}
+              disabled={!nextId || isLoading}
             >
               Next
               <ArrowRight className="h-4 w-4 ml-1" />

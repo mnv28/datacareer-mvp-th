@@ -188,10 +188,10 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
   
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="border-b p-3 bg-gray-50 flex items-center justify-between">
+      <div className="border-b px-3 py-1 bg-gray-50 flex items-center justify-between">
         <div className="w-48">
           <Select value={dbType} onValueChange={setDbType}>
-            <SelectTrigger className="h-9 bg-white">
+            <SelectTrigger className="h-8 bg-white">
               <SelectValue placeholder="Select Database" />
             </SelectTrigger>
             <SelectContent>
@@ -201,13 +201,13 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
           </Select>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 item-center">
           <Button
             onClick={runQuery}
             disabled={isExecuting}
             type="button"
             variant="outline"
-            className="border-datacareer-blue text-datacareer-blue hover:bg-datacareer-blue hover:text-white"
+            className="border-datacareer-blue h-8 text-datacareer-blue hover:bg-datacareer-blue hover:text-white"
           >
             {isExecuting ? 'Running...' : 'Run Query'}
           </Button>
@@ -215,7 +215,7 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
             onClick={submitQuery}
             disabled={isExecuting}
             type="button"
-            className="bg-datacareer-blue hover:bg-datacareer-darkBlue"
+            className="bg-datacareer-blue h-8 hover:bg-datacareer-darkBlue"
           >
             Submit
           </Button>

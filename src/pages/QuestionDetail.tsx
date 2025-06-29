@@ -62,6 +62,13 @@ interface DisplaySubmission {
   error?: string | null;
 }
 
+// Interface for navigation question
+interface NavigationQuestion {
+  id: number;
+  title: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+}
+
 const QuestionDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [question, setQuestion] = useState<Question | null>(null);
@@ -69,6 +76,9 @@ const QuestionDetail = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("question");
+  const [previousId, setPreviousId] = useState<number | null>(null);
+  const [nextId, setNextId] = useState<number | null>(null);
+  const [navigationLoading, setNavigationLoading] = useState<boolean>(false);
 console.log("submissions SubmissionsDisplay = ",submissions);
 
   const fetchQuestionDetails = async () => {
@@ -106,9 +116,59 @@ console.log("submissions SubmissionsDisplay = ",submissions);
     }
   };
 
+  // Fetch all questions for navigation
+  const fetchNavigationQuestions = async () => {
+    try {
+      setNavigationLoading(true);
+      const response = await apiInstance.get('/api/question/filterbycompany', {
+        params: {
+          search: '',
+          topic: '',
+          companyId: '',
+          domain: '',
+          difficulty: '',
+          variant: 'MySQL'
+        }
+      });
+
+      const data = response.data;
+      const allQuestions: NavigationQuestion[] = [];
+      
+      // Flatten all questions from all companies
+      data.companies.forEach((company: any) => {
+        company.questions.forEach((question: any) => {
+          allQuestions.push({
+            id: question.id,
+            title: question.title,
+            difficulty: question.difficulty // Add difficulty for sorting
+          });
+        });
+      });
+
+      // Sort by difficulty (Beginner < Intermediate < Advanced)
+      const difficultyOrder = { Beginner: 0, Intermediate: 1, Advanced: 2 };
+      allQuestions.sort((a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty]);
+
+      // Find current question index
+      const currentIndex = allQuestions.findIndex(q => q.id === parseInt(id!));
+      
+      if (currentIndex !== -1) {
+        // Set previous and next IDs
+        setPreviousId(currentIndex > 0 ? allQuestions[currentIndex - 1].id : null);
+        setNextId(currentIndex < allQuestions.length - 1 ? allQuestions[currentIndex + 1].id : null);
+      }
+    } catch (err) {
+      console.error("Error fetching navigation questions:", err);
+      // If navigation fails, buttons will remain disabled
+    } finally {
+      setNavigationLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (id) {
       fetchQuestionDetails();
+      fetchNavigationQuestions();
     }
   }, [id]);
 
@@ -184,8 +244,9 @@ console.log("submissions SubmissionsDisplay = ",submissions);
           company={question.company.name}
           topic={question.topic.name}
           difficulty={question.difficulty}
-          previousId={null} // These would need to be fetched from the API
-          nextId={null}    // These would need to be fetched from the API
+          previousId={previousId}
+          nextId={nextId}
+          isLoading={navigationLoading}
         />
 
         <ResizablePanelGroup

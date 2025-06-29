@@ -125,7 +125,7 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
             <div className="bg-gray-50 p-3 border-b">
               <h4 className="text-sm font-medium text-gray-700">Submission Details</h4>
             </div>
-           {submissions.length > 0 ? (
+           {submissions.length > 0 && selectedSubmission ? (
               <div className="p-4">
                 {showToast && selectedSubmission.status !== 'Correct' && selectedSubmission.status !== 'mismatch' && (
                   <div className="mb-4">

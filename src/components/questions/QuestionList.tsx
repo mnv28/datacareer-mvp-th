@@ -58,22 +58,26 @@ const getDifficultyBadgeClass = (difficulty: Question['difficulty']) => {
 const QuestionList: React.FC<QuestionListProps> = ({ companies }) => {
   return (
     <div className="bg-white rounded-lg shadow-md">
-      <Accordion type="multiple" className="w-full">
+      <Accordion
+        type="multiple"
+        className="w-full"
+        defaultValue={companies.map(company => `company-${company.id}`)}
+      >
         {companies.map((company) => (
-          <AccordionItem 
+          <AccordionItem
             key={company.id}
             value={`company-${company.id}`}
             className="border-b last:border-b-0"
           >
-            <AccordionTrigger 
+            <AccordionTrigger
               className="px-4 py-3 hover:bg-gray-50 transition-all"
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between w-full text-left">
                 <div className="flex items-center space-x-3">
-                  <CompanyLogo 
-                    name={company.name} 
-                    size="sm" 
-                    logo={company.logo} 
+                  <CompanyLogo
+                    name={company.name}
+                    size="sm"
+                    logo={company.logo}
                   />
                   <div>
                     <span className="font-medium text-datacareer-darkBlue hover:text-datacareer-orange company-name">

@@ -29,8 +29,11 @@ const Header = () => {
             <img src={logodatacareer} alt="DataCareer App Logo" className="h-10 w-auto" />
           </Link>
         </div>
-        
+
         <div className="hidden md:flex items-center space-x-1">
+          <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue" onClick={() => navigate('/')}>
+            Home
+          </Button>
           <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue">
             SQL Practice Questions
           </Button>
@@ -41,10 +44,10 @@ const Header = () => {
             About
           </Button> */}
         </div>
-        
+
         <div className="flex items-center space-x-2">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             className="text-datacareer-blue hover:text-datacareer-darkBlue flex items-center gap-2"
             onClick={handleLogout}
           >
