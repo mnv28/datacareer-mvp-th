@@ -195,13 +195,15 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
                 )}
 
                 {/* If there is an error, show the error details below the query */}
-                {selectedSubmission.error && (
+                {(selectedSubmission.error || selectedSubmission.status === 'mismatch') && (
                   <div className="mt-4">
                     <div className="text-xs text-gray-500 mb-1 font-semibold">Error Details</div>
                     <pre className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative whitespace-pre-wrap break-all">
-                      {typeof selectedSubmission.error === 'string'
-                        ? selectedSubmission.error
-                        : JSON.stringify(selectedSubmission.error, null, 2)}
+                      {selectedSubmission.status === 'mismatch' 
+                        ? "Incorrect Submission: Your query's output doesn't match with the solution's output!"
+                        : typeof selectedSubmission.error === 'string'
+                          ? `Incorrect Submission: ${selectedSubmission.error}`
+                          : `Incorrect Submission: ${JSON.stringify(selectedSubmission.error, null, 2)}`}
                     </pre>
                   </div>
                 )}

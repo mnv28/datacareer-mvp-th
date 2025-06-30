@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import MonacoEditor from '@monaco-editor/react';
@@ -57,6 +57,10 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
   const resizerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<SubmissionResponse | null>(null);
+  const [showToast, setShowToast] = useState<boolean>(false);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [toastMessage, setToastMessage] = useState<string>('');
   
   const runQuery = async () => {
     // Check if query is empty or only whitespace
@@ -107,7 +111,7 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
 
     // Check if query is empty or only whitespace
     if (!query || query.trim() === '') {
-      setError('Query is empty. Please enter a SQL query.');
+      setError('Blank submission: Query is empty. Please enter a SQL query.');
       setResults(null);
       setSubmittedQueryDisplay(null);
       return;
@@ -131,11 +135,17 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
       if (response.data) {
         // Check the nested 'submission.error' property
         if (response.data.submission && response.data.submission.error) {
-           // On submission error, set error state
-           setError(`Submission Error: ${response.data.submission.error}`);
+           // On submission error, set error state with "Incorrect Submission:" prefix
+           setError(`Incorrect Submission: ${response.data.submission.error}`);
            setResults(null); // Ensure results are null
            setSubmittedQueryDisplay(null); // Ensure submitted query display is null
             onSubmit(response.data); 
+        } else if (response.data.submission && response.data.submission.status === 'mismatch') {
+          // Handle mismatch status specifically
+          setError("Incorrect Submission: Your query's output doesn't match with the solution's output!");
+          setResults(null);
+          setSubmittedQueryDisplay(null);
+          onSubmit(response.data);
         } else {
           // On successful submission (or submission without a specific error message in submission object)
           console.log("response.data", response.data);
@@ -146,7 +156,7 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
           onSubmit(response.data); 
         }
       } else {
-         setError('Unexpected response format from Submit API');
+         setError('Incorrect Submission: Unexpected response format from Submit API');
          setResults(null); // Ensure results are null
          setSubmittedQueryDisplay(null); // Ensure submitted query display is null
       }
@@ -154,7 +164,7 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
     } catch (err) {
       // Handle network or other request errors
       const axiosError = err as AxiosError;
-      setError(`Request Error: ${axiosError.message || 'An error occurred while submitting the solution'}`);
+      setError(`Incorrect Submission: ${axiosError.message || 'An error occurred while submitting the solution'}`);
       setResults(null); // Ensure results are null
       setSubmittedQueryDisplay(null); // Ensure submitted query display is null
     } finally {
@@ -201,6 +211,36 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
       resizer.removeEventListener('mousedown', onMouseDown);
     };
   }, []);
+  
+  useEffect(() => {
+    if (selectedSubmission) {
+      setShowToast(true);
+      // Use the status from the selected submission for toast message logic
+      if (selectedSubmission.submission.status === 'Correct') {
+        setToastType('success');
+        setToastMessage('Correct Submission: Your query matches the expected output!');
+      } else if (selectedSubmission.submission.status === 'mismatch') {
+        setToastType('error');
+        setToastMessage("Incorrect Submission: Your query's output doesn't match with the solution's output!");
+      } else if (selectedSubmission.submission.status === 'Error') {
+        setToastType('error');
+        setToastMessage('Incorrect Submission: There was an error executing your query.');
+      } else if (selectedSubmission.submission.status === 'Wrong') {
+         setToastType('error');
+         setToastMessage('Incorrect Submission: Your query returned incorrect results.');
+      }
+
+      // Auto-hide toast after 5 seconds
+      const timer = setTimeout(() => {
+        setShowToast(false);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    } else {
+       // If no submission is selected, hide the toast
+       setShowToast(false);
+    }
+  }, [selectedSubmission]); // Depend on selectedSubmission
   
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
