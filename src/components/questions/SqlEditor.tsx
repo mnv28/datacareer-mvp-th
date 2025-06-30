@@ -59,6 +59,14 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
   const resultsRef = useRef<HTMLDivElement>(null);
   
   const runQuery = async () => {
+    // Check if query is empty or only whitespace
+    if (!query || query.trim() === '') {
+      setError('Query is empty. Please enter a SQL query.');
+      setResults(null);
+      setSubmittedQueryDisplay(null);
+      return;
+    }
+
     setIsExecuting(true);
     setError(null);
     setResults(null); // Clear previous results on new run
@@ -96,6 +104,14 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
 
   const submitQuery = async () => {
     if (!onSubmit) return; // Ensure onSubmit prop is provided
+
+    // Check if query is empty or only whitespace
+    if (!query || query.trim() === '') {
+      setError('Query is empty. Please enter a SQL query.');
+      setResults(null);
+      setSubmittedQueryDisplay(null);
+      return;
+    }
 
     setIsExecuting(true);
     setError(null); // Clear previous errors
@@ -196,7 +212,7 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="mysql">MySQL</SelectItem>
-              <SelectItem value="postgresql" disabled>PostgreSQL (Coming Soon)</SelectItem>
+              {/* <SelectItem value="postgresql" disabled>PostgreSQL (Coming Soon)</SelectItem> */}
             </SelectContent>
           </Select>
         </div>

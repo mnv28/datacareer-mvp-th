@@ -119,11 +119,11 @@ const QuestionList: React.FC<QuestionListProps> = ({ companies }) => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 mt-2 md:mt-0 ml-7 md:ml-0">
+                    <span className={`text-xs px-2 py-0.5 border rounded ${getDifficultyBadgeClass(question.difficulty)}`}>
+                        {question.difficulty}
+                      </span>
                       <span className="text-xs px-2 py-0.5 border rounded">
                         {question.type}
-                      </span>
-                      <span className={`text-xs px-2 py-0.5 border rounded ${getDifficultyBadgeClass(question.difficulty)}`}>
-                        {question.difficulty}
                       </span>
                       {/* Paid/Free badge */}
                       {question.isPaid ? (
