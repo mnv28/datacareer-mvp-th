@@ -139,7 +139,23 @@ const SubmissionsDisplay: React.FC<SubmissionsDisplayProps> = ({ submissions }) 
                 <div className="flex flex-wrap justify-between mb-3">
                   <div className="mb-2 mr-4">
                     <div className="text-xs text-gray-500">Submitted at</div>
-                    <div className="text-sm">{selectedSubmission.timestamp ? new Date(selectedSubmission.timestamp).toLocaleString() : 'Invalid Date'}</div>
+                    {selectedSubmission.timestamp ? new Date(selectedSubmission.timestamp).toLocaleString() : 'Invalid Date'} 
+                    {/* <div className="text-sm">
+                      {
+                        selectedSubmission.timestamp
+                          ? (() => {
+                              const date = new Date(selectedSubmission.timestamp);
+                              const day = String(date.getDate()).padStart(2, '0');
+                              const month = String(date.getMonth() + 1).padStart(2, '0');
+                              const year = String(date.getFullYear()).slice(-2);
+                              const hours = String(date.getHours()).padStart(2, '0');
+                              const minutes = String(date.getMinutes()).padStart(2, '0');
+                              const seconds = String(date.getSeconds()).padStart(2, '0');
+                              return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+                            })()
+                          : 'Invalid Date'
+                      }
+                    </div> */}
                   </div>
                   <div className="mb-2 mr-4">
                     <div className="text-xs text-gray-500">Status</div>

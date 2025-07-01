@@ -29,6 +29,7 @@ interface SubmissionResponse {
 }
 
 interface Question {
+  logo: string;
   id: number;
   title: string;
   companyId: number;
@@ -90,6 +91,7 @@ console.log("submissions SubmissionsDisplay = ",submissions);
       // Transform the question data
       const transformedQuestion: Question = {
         ...data.question,
+        logo: data.question.company.logo,
         difficulty: data.question.difficulty.charAt(0).toUpperCase() + data.question.difficulty.slice(1) as 'Beginner' | 'Intermediate' | 'Advanced'
       };
 
@@ -240,6 +242,7 @@ console.log("submissions SubmissionsDisplay = ",submissions);
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
         <QuestionHeader
+        logo={question.logo}
           title={question.title}
           company={question.company.name}
           topic={question.topic.name}

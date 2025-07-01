@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
 interface QuestionHeaderProps {
+  logo: string;
   title: string;
   company: string;
   topic: string;
@@ -25,6 +26,7 @@ const getDifficultyColor = (difficulty: QuestionHeaderProps['difficulty']) => {
 };
 
 const QuestionHeader: React.FC<QuestionHeaderProps> = ({
+  logo,
   title,
   company,
   topic,
@@ -37,7 +39,7 @@ const QuestionHeader: React.FC<QuestionHeaderProps> = ({
     <div className="bg-white p-4 rounded-lg shadow-md mb-4">
       <div className="flex flex-col md:flex-row justify-between">
         <div className="flex-1">
-          <h1 className="text-xl font-medium text-datacareer-darkBlue">{title}</h1>
+          <h1 className="text-xl font-medium text-datacareer-darkBlue flex"><img src={logo} alt="Company Logo" className="h-8 w-8 object-contain mr-2" /> {title}</h1>
           <div className="flex items-center flex-wrap mt-2 gap-2">
             <span className="text-sm bg-datacareer-skyBlue/20 text-datacareer-blue px-2 py-0.5 rounded">
               {company}
