@@ -299,7 +299,8 @@ function Index() {
 
         const matchesTopic =
           selectedTopics.length === 0 ||
-          selectedTopics.includes(question.topic.id);
+          selectedTopics.map(String).includes(String(question.topic.id)) ||
+          selectedTopics.map(String).includes(String(question.topic.name));
 
         const matchesDomain =
           selectedDomains.length === 0 ||

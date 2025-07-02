@@ -22,7 +22,7 @@ export const fetchDomains = createAsyncThunk(
   'domain/fetchDomains',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await apiInstance.get('/api/domain/getAll');
+      const response = await apiInstance.get('/api/domain/admin/getall/active');
       return response.data.domains;
     } catch (error) {
       return rejectWithValue('Failed to fetch domains');
