@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import "./QuestionContent.css";
 
 const TAILWIND_TABLE_CLASSES = "min-w-full border border-gray-200";
 const TAILWIND_TH_CLASSES = "px-4 py-2 border font-bold text-left bg-gray-50";
@@ -28,7 +29,7 @@ const QuestionContent: React.FC<{ content: string }> = ({ content }) => {
   }, [content]);
 
   return (
-    <div ref={contentRef} className="overflow-x-auto prose max-w-none">
+    <div ref={contentRef} className="overflow-x-auto prose max-w-none question-content">
       <div dangerouslySetInnerHTML={{ __html: fixListParagraphs(content) }} />
     </div>
   );

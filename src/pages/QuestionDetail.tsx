@@ -87,6 +87,7 @@ console.log("submissions SubmissionsDisplay = ",submissions);
       setLoading(true);
       const response = await apiInstance.get(`/api/question/${id}`);
       const data = response.data;
+console.log("data = data ",data);
 
       // Transform the question data
       const transformedQuestion: Question = {
@@ -242,7 +243,7 @@ console.log("submissions SubmissionsDisplay = ",submissions);
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
         <QuestionHeader
-        logo={question.logo}
+          logo={question.logo}
           title={question.title}
           company={question.company.name}
           topic={question.topic.name}
