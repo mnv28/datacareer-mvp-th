@@ -211,7 +211,7 @@ function Index() {
       try {
         const response = await apiInstance.get('/api/question/filterbycompany', {
           params: {
-            search: searchQuery,
+            search: searchQuery.length >= 2 ? searchQuery : '',
             topic: selectedTopics.length > 0 ? selectedTopics.join(',') : '',
             companyId: selectedCompanies.length > 0 ? selectedCompanies.join(',') : '',
             domain: selectedDomains.length > 0 ? selectedDomains.join(',') : '',

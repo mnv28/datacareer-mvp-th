@@ -233,7 +233,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
             value={localSearch}
             onChange={(e) => {
               setLocalSearch(e.target.value);
-              setSearchQuery(e.target.value); // Update parent searchQuery in real-time
+              // Remove real-time update: setSearchQuery(e.target.value);
             }}
             className="pl-9 h-10"
           />

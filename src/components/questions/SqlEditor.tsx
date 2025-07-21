@@ -241,6 +241,12 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
        setShowToast(false);
     }
   }, [selectedSubmission]); // Depend on selectedSubmission
+
+  useEffect(() => {
+    setError(null);
+    setResults(null);
+    setSubmittedQueryDisplay(null);
+  }, [id]);
   
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">

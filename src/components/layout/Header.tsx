@@ -23,28 +23,22 @@ const Header = () => {
 
   return (
     <header className="w-full bg-white border-b border-gray-200 shadow-sm">
-      <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+      <div className="container mx-auto px-4 py-4 flex items-center justify-between relative">
+        {/* Logo (Home) */}
         <div className="flex items-center space-x-2">
           <Link to="/" className="flex items-center">
             <img src={logodatacareer} alt="DataCareer App Logo" className="h-10 w-auto" />
           </Link>
         </div>
 
-        <div className="hidden md:flex items-center space-x-1">
-          <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue" onClick={() => navigate('/')}>
-            Home
-          </Button>
-          <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue">
+        {/* Centered SQL Practice Questions */}
+        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+          <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue text-lg px-6">
             SQL Practice Questions
           </Button>
-          {/* <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue">
-            Companies
-          </Button>
-          <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue">
-            About
-          </Button> */}
         </div>
 
+        {/* Logout Button on the right */}
         <div className="flex items-center space-x-2">
           <Button
             variant="ghost"
