@@ -10,7 +10,8 @@ interface ProgressSummaryProps {
   beginnerSolved: number;
   intermediateSolved: number;
   advancedSolved: number;
-  wrong: number; // Added
+  wrong: number; 
+  unattempted: number; 
 }
 
 const ProgressSummary: React.FC<ProgressSummaryProps> = ({ 
@@ -22,7 +23,8 @@ const ProgressSummary: React.FC<ProgressSummaryProps> = ({
   beginnerSolved,
   intermediateSolved,
   advancedSolved,
-  wrong // Added
+  wrong,
+  unattempted, 
 }) => {
   const solvedPercentage = Math.round((solved / total) * 100) || 0;
   const beginnerPercentage = beginner > 0 ? Math.round((beginnerSolved / beginner) * 100) : 0;
@@ -86,7 +88,7 @@ const ProgressSummary: React.FC<ProgressSummaryProps> = ({
             <div className="text-xs text-gray-500">Wrong</div>
           </div>
           <div className="flex flex-col items-center p-2 rounded-md bg-gray-50">
-            <div className="text-xl font-medium text-status-unattempted">{total - solved}</div>
+            <div className="text-xl font-medium text-status-unattempted">{unattempted}</div>
             <div className="text-xs text-gray-500">Unattempted</div>
           </div>
         </div>
