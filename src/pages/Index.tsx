@@ -194,6 +194,7 @@ function Index() {
       intermediate: { attempted: 0, solved: 0 },
       advanced: { attempted: 0, solved: 0 },
     },
+    wrong: 0, // Add wrong to initial state
   });
   const [loadingProgress, setLoadingProgress] = useState(true);
   const [errorProgress, setErrorProgress] = useState<string | null>(null);
@@ -345,6 +346,7 @@ function Index() {
     beginnerSolved: progressData.difficultyProgress.beginner.solved,
     intermediateSolved: progressData.difficultyProgress.intermediate.solved,
     advancedSolved: progressData.difficultyProgress.advanced.solved,
+    wrong: progressData.wrong // Use backend value
   };
 
   const handleClearAll = () => {
