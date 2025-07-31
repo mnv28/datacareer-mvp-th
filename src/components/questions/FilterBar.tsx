@@ -347,7 +347,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
               selectedVariants: localVariants
             })}
           >
-            Apply
+            Search
           </button>
         </div>
       </div>
