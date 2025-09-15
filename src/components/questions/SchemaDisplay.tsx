@@ -24,7 +24,9 @@ const SchemaDisplay: React.FC<SchemaDisplayProps> = ({ tables, erdImage, schema 
     <div className="space-y-4">
       {erdImage && (
         <div className="mb-6">
-          <h3 className="text-lg font-medium text-datacareer-darkBlue mb-3">Entity Relationship Diagram</h3>
+                    <h3 className="text-lg font-medium text-datacareer-darkBlue mb-3">Database Schema</h3>
+
+          {/* <h3 className="text-lg font-medium text-datacareer-darkBlue mb-3">Entity Relationship Diagram</h3> */}
       {schema && (
         // <div className="border rounded-lg overflow-hidden bg-white p-2">
               <div dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
@@ -33,7 +35,7 @@ const SchemaDisplay: React.FC<SchemaDisplayProps> = ({ tables, erdImage, schema 
         </div>
       )}
       
-      <h3 className="text-lg font-medium text-datacareer-darkBlue mb-3">Database Schema</h3>
+      <h3 className="text-lg font-medium text-datacareer-darkBlue mb-3">Entity Relationship Diagram</h3>
      
         <div className="border rounded-lg overflow-hidden bg-white p-2">
           <img src={erdImage} alt="Schema ERD" className="max-w-full h-auto" />

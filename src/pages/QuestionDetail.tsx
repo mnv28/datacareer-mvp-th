@@ -9,7 +9,6 @@ import SolutionsDisplay from '@/components/questions/SolutionsDisplay';
 import SubmissionsDisplay from '@/components/questions/SubmissionsDisplay';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { apiInstance } from '@/api/axiosApi';
-import { AxiosError } from 'axios'; // Import AxiosError for better type handling
 
 // Define the expected structure of a submission response from the API
 interface SubmissionResponse {
@@ -135,30 +134,43 @@ console.log("data = data ",data);
       });
 
       const data = response.data;
-      const allQuestions: NavigationQuestion[] = [];
-      
-      // Flatten all questions from all companies
+      // Build navigation array: group by company, then by difficulty order, then by original order
+      const difficultyOrder = ['Beginner', 'Intermediate', 'Advanced'];
+      const navigationQuestions: NavigationQuestion[] = [];
+
       data.companies.forEach((company: any) => {
+        // Group questions by difficulty, normalize casing
+        const grouped: { [key: string]: NavigationQuestion[] } = {
+          Beginner: [],
+          Intermediate: [],
+          Advanced: []
+        };
         company.questions.forEach((question: any) => {
-          allQuestions.push({
-            id: question.id,
-            title: question.title,
-            difficulty: question.difficulty // Add difficulty for sorting
-          });
+          // Normalize difficulty casing (API may return lowercase)
+          let difficulty = question.difficulty;
+          if (typeof difficulty === 'string') {
+            difficulty = difficulty.charAt(0).toUpperCase() + difficulty.slice(1).toLowerCase();
+          }
+          if (grouped[difficulty]) {
+            grouped[difficulty].push({
+              id: question.id,
+              title: question.title,
+              difficulty: difficulty
+            });
+          }
+        });
+        // Push questions in difficulty order
+        difficultyOrder.forEach(diff => {
+          navigationQuestions.push(...grouped[diff]);
         });
       });
 
-      // Sort by difficulty (Beginner < Intermediate < Advanced)
-      const difficultyOrder = { Beginner: 0, Intermediate: 1, Advanced: 2 };
-      allQuestions.sort((a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty]);
-
       // Find current question index
-      const currentIndex = allQuestions.findIndex(q => q.id === parseInt(id!));
-      
+      const currentIndex = navigationQuestions.findIndex(q => q.id === parseInt(id!));
+
       if (currentIndex !== -1) {
-        // Set previous and next IDs
-        setPreviousId(currentIndex > 0 ? allQuestions[currentIndex - 1].id : null);
-        setNextId(currentIndex < allQuestions.length - 1 ? allQuestions[currentIndex + 1].id : null);
+        setPreviousId(currentIndex > 0 ? navigationQuestions[currentIndex - 1].id : null);
+        setNextId(currentIndex < navigationQuestions.length - 1 ? navigationQuestions[currentIndex + 1].id : null);
       }
     } catch (err) {
       console.error("Error fetching navigation questions:", err);
@@ -172,6 +184,7 @@ console.log("data = data ",data);
     if (id) {
       fetchQuestionDetails();
       fetchNavigationQuestions();
+      setActiveTab("question"); // Always reset to question tab on question change
     }
   }, [id]);
 
