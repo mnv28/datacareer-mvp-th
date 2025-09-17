@@ -5,29 +5,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import AuthLayout from '@/components/auth/AuthLayout';
+import { apiInstance } from '@/api/axiosApi';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
 
-    try {
-      // In a real app, you would make an API call to your backend
-      // For now, we'll just simulate a successful request
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setIsSubmitted(true);
-      toast.success('Password reset instructions sent to your email');
-    } catch (error) {
-      toast.error('Failed to send reset instructions');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  try {
+    await apiInstance.post('/api/auth/forgot-password', { email });
+    setIsSubmitted(true);
+    toast.success('Password reset instructions sent to your email');
+  } catch (error) {
+    toast.error('Failed to send reset instructions');
+  } finally {
+    setIsLoading(false);
+  }
+};
   return (
     <AuthLayout
       title="Forgot your password?"
