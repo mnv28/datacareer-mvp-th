@@ -53,7 +53,7 @@ const Footer = () => {
           © {new Date().getFullYear()} Datacareer.app. All rights reserved.
         </div>
         <div className="border-gray-200 mt-2 pt-2 text-center text-xs text-gray-500">
-          This MVP Module is Designed and Developed with ❤️ by Techifyhouse.
+          Designed and Developed with ❤️ by Techifyhouse.
         </div>
       </div>
     </footer>
