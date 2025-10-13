@@ -31,11 +31,18 @@ const Header = () => {
           </Link>
         </div>
 
-        {/* Centered SQL Practice Questions */}
-        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-          <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue text-lg px-6">
-            SQL Practice Questions
-          </Button>
+        {/* Centered Navigation */}
+        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center gap-4">
+          <Link to="/">
+            <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue text-lg px-6">
+              SQL Practice Questions
+            </Button>
+          </Link>
+          <Link to="/job-database">
+            <Button variant="ghost" className="text-datacareer-blue hover:text-datacareer-darkBlue text-lg px-6">
+              Job Database
+            </Button>
+          </Link>
         </div>
 
         {/* Logout Button on the right */}

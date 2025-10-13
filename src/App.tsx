@@ -10,6 +10,7 @@ import ForgotPassword from '@/pages/auth/ForgotPassword';
 import ResetPassword from '@/pages/auth/ResetPassword';
 import Index from '@/pages/Index';
 import QuestionDetail from '@/pages/QuestionDetail';
+import JobDatabase from '@/pages/JobDatabase';
 import { store } from './redux/store';
 
 const App = () => {
@@ -37,6 +38,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <QuestionDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job-database"
+            element={
+              <ProtectedRoute>
+                <JobDatabase />
               </ProtectedRoute>
             }
           />
