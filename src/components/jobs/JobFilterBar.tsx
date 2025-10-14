@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Filter, X, Download, Save, CalendarIcon } from 'lucide-react';
+import { Filter, X, Download, Save, CalendarIcon, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface JobFilters {
@@ -30,6 +30,33 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
   onFiltersChange,
   onClearFilters
 }) => {
+  const [openPopovers, setOpenPopovers] = React.useState<{
+    roleCategory: boolean;
+    locationState: boolean;
+    experienceLevel: boolean;
+    locationType: boolean;
+  }>({
+    roleCategory: false,
+    locationState: false,
+    experienceLevel: false,
+    locationType: false,
+  });
+
+  // Helper function to get full state name
+  const getStateFullName = (stateCode: string): string => {
+    const stateMap: { [key: string]: string } = {
+      'nsw': 'New South Wales',
+      'vic': 'Victoria',
+      'qld': 'Queensland',
+      'wa': 'Western Australia',
+      'sa': 'South Australia',
+      'tas': 'Tasmania',
+      'act': 'ACT',
+      'nt': 'Northern Territory'
+    };
+    return stateMap[stateCode.toLowerCase()] || stateCode.toUpperCase();
+  };
+
   const handleFilterChange = (key: keyof JobFilters, value: string | Date | undefined | string[]) => {
     onFiltersChange({
       ...filters,
@@ -44,6 +71,10 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
       : currentValues.filter(v => v !== value);
     
     handleFilterChange(key, newValues);
+  };
+
+  const togglePopover = (key: 'roleCategory' | 'locationState' | 'experienceLevel' | 'locationType', isOpen: boolean) => {
+    setOpenPopovers(prev => ({ ...prev, [key]: isOpen }));
   };
 
   const hasActiveFilters = Object.values(filters).some(value => {
@@ -87,18 +118,21 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Role Category
             </label>
-            <Popover>
+            <Popover open={openPopovers.roleCategory} onOpenChange={(isOpen) => togglePopover('roleCategory', isOpen)}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal"
+                  className="w-full justify-between text-left font-normal"
                 >
-                  {filters.roleCategory.length === 0 
-                    ? "Select roles" 
-                    : filters.roleCategory.length === 1 
-                      ? filters.roleCategory[0].replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
-                      : `${filters.roleCategory.length} roles selected`
-                  }
+                  <span>
+                    {filters.roleCategory.length === 0 
+                      ? "Select roles" 
+                      : filters.roleCategory.length === 1 
+                        ? filters.roleCategory[0].replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
+                        : `${filters.roleCategory.length} roles selected`
+                    }
+                  </span>
+                  <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openPopovers.roleCategory ? 'rotate-180' : ''}`} />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-3">
@@ -132,18 +166,21 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Location (State)
             </label>
-            <Popover>
+            <Popover open={openPopovers.locationState} onOpenChange={(isOpen) => togglePopover('locationState', isOpen)}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal"
+                  className="w-full justify-between text-left font-normal"
                 >
-                  {filters.locationState.length === 0 
-                    ? "Select locations" 
-                    : filters.locationState.length === 1 
-                      ? filters.locationState[0].toUpperCase()
-                      : `${filters.locationState.length} locations selected`
-                  }
+                  <span>
+                    {filters.locationState.length === 0 
+                      ? "Select locations" 
+                      : filters.locationState.length === 1 
+                        ? getStateFullName(filters.locationState[0])
+                        : `${filters.locationState.length} locations selected`
+                    }
+                  </span>
+                  <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openPopovers.locationState ? 'rotate-180' : ''}`} />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-3">
@@ -237,18 +274,21 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Experience Level
             </label>
-            <Popover>
+            <Popover open={openPopovers.experienceLevel} onOpenChange={(isOpen) => togglePopover('experienceLevel', isOpen)}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal"
+                  className="w-full justify-between text-left font-normal"
                 >
-                  {filters.experienceLevel.length === 0 
-                    ? "Select experience levels" 
-                    : filters.experienceLevel.length === 1 
-                      ? filters.experienceLevel[0].replace(/\b\w/g, l => l.toUpperCase()).replace('-', ' ')
-                      : `${filters.experienceLevel.length} levels selected`
-                  }
+                  <span>
+                    {filters.experienceLevel.length === 0 
+                      ? "Select experience levels" 
+                      : filters.experienceLevel.length === 1 
+                        ? filters.experienceLevel[0].replace(/\b\w/g, l => l.toUpperCase()).replace('-', ' ')
+                        : `${filters.experienceLevel.length} levels selected`
+                    }
+                  </span>
+                  <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openPopovers.experienceLevel ? 'rotate-180' : ''}`} />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-3">
@@ -302,18 +342,21 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Location Type
             </label>
-            <Popover>
+            <Popover open={openPopovers.locationType} onOpenChange={(isOpen) => togglePopover('locationType', isOpen)}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal"
+                  className="w-full justify-between text-left font-normal"
                 >
-                  {filters.locationType.length === 0 
-                    ? "Select location types" 
-                    : filters.locationType.length === 1 
-                      ? filters.locationType[0].replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
-                      : `${filters.locationType.length} types selected`
-                  }
+                  <span>
+                    {filters.locationType.length === 0 
+                      ? "Select location types" 
+                      : filters.locationType.length === 1 
+                        ? filters.locationType[0].replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
+                        : `${filters.locationType.length} types selected`
+                    }
+                  </span>
+                  <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openPopovers.locationType ? 'rotate-180' : ''}`} />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-3">
@@ -445,14 +488,22 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
             <div className="flex flex-wrap gap-2 mt-2">
               {Object.entries(filters).map(([key, value]) => {
                 if (value) {
+                  // Format the value for display
+                  let displayValue = value;
+                  if (key === 'locationState' && Array.isArray(value) && value.length > 0) {
+                    displayValue = value.map(state => getStateFullName(state)).join(', ');
+                  } else if (Array.isArray(value) && value.length > 0) {
+                    displayValue = value.join(', ');
+                  }
+                  
                   return (
                     <span
                       key={key}
                       className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
                     >
-                      {key}: {value}
+                      {key}: {displayValue}
                       <button
-                        onClick={() => handleFilterChange(key as keyof JobFilters, '')}
+                        onClick={() => handleFilterChange(key as keyof JobFilters, key === 'postedDate' ? undefined : '')}
                         className="ml-1 hover:text-blue-600"
                       >
                         <X className="h-3 w-3" />

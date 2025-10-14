@@ -40,7 +40,7 @@ const JobDatabase: React.FC = () => {
       postedDate: '12/10/2025',
       postedDateValue: new Date('2025-10-12'),
       company: {
-        title: 'Golang with Python',
+        title: 'Data Engineer',
         name: 'XPT Software Australia',
         location: 'Sydney, New South Wales'
       },
@@ -54,14 +54,14 @@ const JobDatabase: React.FC = () => {
       postedDate: 'a day ago',
       postedDateValue: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
       company: {
-        title: 'Senior Data Analyst',
+        title: 'Data Analyst',
         name: 'TechCorp Australia',
         location: 'Melbourne, Victoria'
       },
       topTechSkill: 'SQL, Python, Tableau, Power BI, Excel',
       function: 'Data Analysis',
       industry: 'Finance, Banking',
-      otherDetails: ['Senior', 'Full-time', 'Hybrid']
+      otherDetails: ['Data Analyst', 'Senior', 'Full-time', 'Hybrid']
     },
     {
       id: 3,
@@ -76,6 +76,34 @@ const JobDatabase: React.FC = () => {
       function: 'Machine Learning',
       industry: 'Technology, AI',
       otherDetails: ['Senior', 'Remote', 'Full-time']
+    },
+    {
+      id: 4,
+      postedDate: '3 days ago',
+      postedDateValue: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      company: {
+        title: 'Senior Data Engineer',
+        name: 'FinTech Solutions',
+        location: 'Perth, Western Australia'
+      },
+      topTechSkill: 'Python, SQL, Apache Spark, AWS, Docker',
+      function: 'Data Engineering',
+      industry: 'Finance, Banking',
+      otherDetails: ['Data Engineer', 'Senior', 'Full-time', 'Major Cities']
+    },
+    {
+      id: 5,
+      postedDate: '4 days ago',
+      postedDateValue: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+      company: {
+        title: 'Junior Data Analyst',
+        name: 'StartupXYZ',
+        location: 'Adelaide, South Australia'
+      },
+      topTechSkill: 'SQL, Excel, Python, Power BI',
+      function: 'Data Analysis',
+      industry: 'Technology, Startups',
+      otherDetails: ['Data Analyst', 'Entry Level', 'Full-time', 'Regional']
     }
   ];
 
@@ -139,18 +167,33 @@ const JobDatabase: React.FC = () => {
       // Role Category filter
       if (filters.roleCategory.length > 0) {
         const jobTitle = job.company.title.toLowerCase();
-        const hasMatchingRole = filters.roleCategory.some(role => 
-          jobTitle.includes(role.replace('-', ' '))
-        );
+        const jobDetails = job.otherDetails.join(' ').toLowerCase();
+        const hasMatchingRole = filters.roleCategory.some(role => {
+          const searchTerm = role.replace('-', ' ').toLowerCase();
+          return jobTitle.includes(searchTerm) || jobDetails.includes(searchTerm);
+        });
         if (!hasMatchingRole) return false;
       }
       
       // Location State filter
       if (filters.locationState.length > 0) {
         const location = job.company.location.toLowerCase();
-        const hasMatchingLocation = filters.locationState.some(state => 
-          location.includes(state.toLowerCase())
-        );
+        const hasMatchingLocation = filters.locationState.some(state => {
+          // Map state codes to full names for matching
+          const stateMap: { [key: string]: string[] } = {
+            'nsw': ['new south wales', 'sydney'],
+            'vic': ['victoria', 'melbourne'],
+            'qld': ['queensland', 'brisbane'],
+            'wa': ['western australia', 'perth'],
+            'sa': ['south australia', 'adelaide'],
+            'tas': ['tasmania', 'hobart'],
+            'act': ['act', 'canberra'],
+            'nt': ['northern territory', 'darwin']
+          };
+          
+          const searchTerms = stateMap[state.toLowerCase()] || [state.toLowerCase()];
+          return searchTerms.some(term => location.includes(term));
+        });
         if (!hasMatchingLocation) return false;
       }
       
@@ -263,25 +306,25 @@ const JobDatabase: React.FC = () => {
                 </div>
 
                 {/* Navigation Tabs */}
-                <div className="flex gap-2 justify-start lg:justify-end">
+                <div className="flex gap-2 justify-start lg:justify-end bg-white rounded-lg p-1 px-2">
                   <Button
                     onClick={() => setActiveTab('database')}
                     variant={activeTab === 'database' ? 'default' : 'outline'}
-                    className={`px-4 lg:px-6 py-2 rounded-full text-sm ${
+                    className={`px-4 lg:px-5 py-2 rounded-lg text-sm hover:bg-none! ${
                       activeTab === 'database' 
-                        ? 'bg-white text-datacareer-darkBlue hover:bg-gray-100' 
-                        : 'bg-transparent text-white border-white hover:bg-white hover:text-datacareer-darkBlue'
+                        ? 'bg-datacareer-darkBlue text-white' 
+                        : 'bg-transparent text-datacareer-darkBlue border-white'
                     }`}
-                  >
+                  > 
                     Job Database
                   </Button>
                   <Button
                     onClick={() => setActiveTab('tracker')}
                     variant={activeTab === 'tracker' ? 'default' : 'outline'}
-                    className={`px-4 lg:px-6 py-2 rounded-full text-sm ${
+                    className={`px-4 lg:px-5 py-2 rounded-lg text-sm hover:bg-none! ${
                       activeTab === 'tracker' 
-                        ? 'bg-white text-datacareer-darkBlue hover:bg-gray-100' 
-                        : 'bg-transparent text-white border-white hover:bg-white hover:text-datacareer-darkBlue'
+                        ? 'bg-datacareer-darkBlue text-white' 
+                        : 'bg-transparent text-datacareer-darkBlue border-white'
                     }`}
                   >
                     Saved Jobs
