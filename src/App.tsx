@@ -12,49 +12,52 @@ import Index from '@/pages/Index';
 import QuestionDetail from '@/pages/QuestionDetail';
 import JobDatabase from '@/pages/JobDatabase';
 import { store } from './redux/store';
+import { SidebarProvider } from './contexts/SidebarContext';
 
 const App = () => {
   return (
     <Provider store={store}>
-      <Router>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+      <SidebarProvider>
+        <Router>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* Protected routes */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Index />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/question/:id"
-            element={
-              <ProtectedRoute>
-                <QuestionDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/job-database"
-            element={
-              <ProtectedRoute>
-                <JobDatabase />
-              </ProtectedRoute>
-            }
-          />
+            {/* Protected routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Index />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/question/:id"
+              element={
+                <ProtectedRoute>
+                  <QuestionDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/job-database"
+              element={
+                <ProtectedRoute>
+                  <JobDatabase />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Fallback route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-        <Toaster position="top-right" />
-      </Router>
+            {/* Fallback route */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+          <Toaster position="top-right" />
+        </Router>
+      </SidebarProvider>
     </Provider>
   );
 };

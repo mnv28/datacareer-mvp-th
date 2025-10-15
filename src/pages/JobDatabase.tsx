@@ -305,31 +305,31 @@ const JobDatabase: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Navigation Tabs */}
-                <div className="flex gap-2 justify-start lg:justify-end bg-white rounded-lg p-1 px-2">
-                  <Button
-                    onClick={() => setActiveTab('database')}
-                    variant={activeTab === 'database' ? 'default' : 'outline'}
-                    className={`px-4 lg:px-5 py-2 rounded-lg text-sm hover:bg-none! ${
-                      activeTab === 'database' 
-                        ? 'bg-datacareer-darkBlue text-white' 
-                        : 'bg-transparent text-datacareer-darkBlue border-white'
-                    }`}
-                  > 
-                    Job Database
-                  </Button>
-                  <Button
-                    onClick={() => setActiveTab('tracker')}
-                    variant={activeTab === 'tracker' ? 'default' : 'outline'}
-                    className={`px-4 lg:px-5 py-2 rounded-lg text-sm hover:bg-none! ${
-                      activeTab === 'tracker' 
-                        ? 'bg-datacareer-darkBlue text-white' 
-                        : 'bg-transparent text-datacareer-darkBlue border-white'
-                    }`}
-                  >
-                    Saved Jobs
-                  </Button>
-                </div>
+                 {/* Navigation Tabs */}
+                 <div className="flex gap-2 justify-start lg:justify-end bg-white rounded-lg p-1 px-2 w-fit">
+                   <Button
+                     onClick={() => setActiveTab('database')}
+                     variant={activeTab === 'database' ? 'default' : 'outline'}
+                     className={`px-3 sm:px-4 lg:px-5 py-2 rounded-lg text-xs sm:text-sm hover:bg-none! whitespace-nowrap ${
+                       activeTab === 'database' 
+                         ? 'bg-datacareer-darkBlue text-white' 
+                         : 'bg-transparent text-datacareer-darkBlue border-white'
+                     }`}
+                   > 
+                     <span className="sm:inline">Job Database</span>
+                   </Button>
+                   <Button
+                     onClick={() => setActiveTab('tracker')}
+                     variant={activeTab === 'tracker' ? 'default' : 'outline'}
+                     className={`px-3 sm:px-4 lg:px-5 py-2 rounded-lg text-xs sm:text-sm hover:bg-none! whitespace-nowrap ${
+                       activeTab === 'tracker' 
+                         ? 'bg-datacareer-darkBlue text-white' 
+                         : 'bg-transparent text-datacareer-darkBlue border-white'
+                     }`}
+                   >
+                     <span className="sm:inline">Saved Jobs</span>
+                   </Button>
+                 </div>
               </div>
             </div>
           </div>

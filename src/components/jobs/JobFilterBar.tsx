@@ -87,10 +87,10 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
   return (
     <div className="bg-white rounded-lg shadow-sm border mb-4">
       {/* Filter Row 1 - Dropdowns */}
-      <div className="p-4 border-b">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="p-3 sm:p-4 border-b">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Posted Date
             </label>
             <Popover>
@@ -115,7 +115,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Role Category
             </label>
             <Popover open={openPopovers.roleCategory} onOpenChange={(isOpen) => togglePopover('roleCategory', isOpen)}>
@@ -163,7 +163,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Location (State)
             </label>
             <Popover open={openPopovers.locationState} onOpenChange={(isOpen) => togglePopover('locationState', isOpen)}>
@@ -271,7 +271,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Experience Level
             </label>
             <Popover open={openPopovers.experienceLevel} onOpenChange={(isOpen) => togglePopover('experienceLevel', isOpen)}>
@@ -339,7 +339,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Location Type
             </label>
             <Popover open={openPopovers.locationType} onOpenChange={(isOpen) => togglePopover('locationType', isOpen)}>
@@ -389,10 +389,10 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
       </div>
 
       {/* Filter Row 2 - Text Inputs and Apply Button */}
-      <div className="p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="p-3 sm:p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Function
             </label>
             <Input
@@ -405,7 +405,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Tech Skills
             </label>
             <Input
@@ -418,7 +418,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Industry
             </label>
             <Input
@@ -439,28 +439,31 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
             <div className="flex flex-col sm:flex-row gap-2 flex-1">
               <Button
                 variant="outline"
-                className="flex items-center gap-2 text-gray-700 border-gray-300 hover:bg-gray-50"
+                className="flex items-center gap-2 text-gray-700 border-gray-300 hover:bg-gray-50 text-xs sm:text-sm"
               >
-                All Jobs (CSV)
+                <span className="hidden sm:inline">All Jobs (CSV)</span>
+                <span className="sm:hidden">All Jobs</span>
               </Button>
               <Button
                 variant="outline"
-                className="flex items-center gap-2 text-gray-700 border-gray-300 hover:bg-gray-50"
+                className="flex items-center gap-2 text-gray-700 border-gray-300 hover:bg-gray-50 text-xs sm:text-sm"
               >
-                Hidden data jobs (CSV)
+                <span className="hidden sm:inline">Hidden data jobs (CSV)</span>
+                <span className="sm:hidden">Hidden Jobs</span>
               </Button> 
               <Button
                 variant="outline"
-                className="flex items-center gap-2 text-gray-700 border-gray-300 hover:bg-gray-50"
+                className="flex items-center gap-2 text-gray-700 border-gray-300 hover:bg-gray-50 text-xs sm:text-sm"
               >
-                Junior data jobs (CSV)
+                <span className="hidden sm:inline">Junior data jobs (CSV)</span>
+                <span className="sm:hidden">Junior Jobs</span>
               </Button> 
             </div>
             
             {/* Saved Filters Button */}
             <Button
               variant="outline"
-              className="flex items-center gap-2 text-gray-700 border-gray-300 hover:bg-gray-50 whitespace-nowrap"
+              className="flex items-center gap-2 text-gray-700 border-gray-300 hover:bg-gray-50 whitespace-nowrap text-xs sm:text-sm"
             >
               Download 
             </Button>
@@ -470,7 +473,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
         {/* Active Filters Display */}
         {hasActiveFilters && (
           <div className="mt-4 pt-4 border-t">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-gray-500" />
                 <span className="text-sm text-gray-600">Active Filters:</span>
@@ -479,7 +482,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={onClearFilters}
-                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 self-start sm:self-auto"
               >
                 <X className="h-4 w-4 mr-1" />
                 Clear All
