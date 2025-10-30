@@ -56,7 +56,7 @@ function Calendar({
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
       }}
       {...props}
-    />
+    />  
   );
 }
 Calendar.displayName = "Calendar";
