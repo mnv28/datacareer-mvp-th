@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { apiInstance } from '@/api/axiosApi';
 import MainLayout from '@/components/layout/MainLayout';
 import JobFilterBar from '@/components/jobs/JobFilterBar';
 import JobTable from '../components/jobs/JobTable';
@@ -32,80 +34,182 @@ const JobDatabase: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'database' | 'tracker'>('database');
   const [savedJobs, setSavedJobs] = useState<Set<number>>(new Set());
   const [sortOrder, setSortOrder] = useState<'latest' | 'oldest'>('latest');
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [currentDataset, setCurrentDataset] = useState<'all' | 'hidden' | 'junior'>('all');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [limit] = useState<number>(10);
+  const [lastCount, setLastCount] = useState<number>(0);
+  const [knownMaxPage, setKnownMaxPage] = useState<number>(1);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Mock job data
-  const jobData = [
-    {
-      id: 1,
-      postedDate: '12/10/2025',
-      postedDateValue: new Date('2025-10-12'),
-      company: {
-        title: 'Data Engineer',
-        name: 'XPT Software Australia',
-        location: 'Sydney, New South Wales'
-      },
-      topTechSkill: 'Python, Golang, Docker, Kubernetes, SQL, NoSQL, Git, Linux',
-      function: 'Software Development',
-      industry: 'Software Development, Information Technology',
-      otherDetails: ['Data Engineer', 'Associate', 'Senior', 'Clearance']
-    },
-    {
-      id: 2,
-      postedDate: 'a day ago',
-      postedDateValue: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-      company: {
-        title: 'Data Analyst',
-        name: 'TechCorp Australia',
-        location: 'Melbourne, Victoria'
-      },
-      topTechSkill: 'SQL, Python, Tableau, Power BI, Excel',
-      function: 'Data Analysis',
-      industry: 'Finance, Banking',
-      otherDetails: ['Data Analyst', 'Senior', 'Full-time', 'Hybrid']
-    },
-    {
-      id: 3,
-      postedDate: '2 days ago',
-      postedDateValue: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      company: {
-        title: 'Machine Learning Engineer',
-        name: 'AI Solutions Pty Ltd',
-        location: 'Brisbane, Queensland'
-      },
-      topTechSkill: 'Python, TensorFlow, PyTorch, AWS, Docker',
-      function: 'Machine Learning',
-      industry: 'Technology, AI',
-      otherDetails: ['Senior', 'Remote', 'Full-time']
-    },
-    {
-      id: 4,
-      postedDate: '3 days ago',
-      postedDateValue: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      company: {
-        title: 'Senior Data Engineer',
-        name: 'FinTech Solutions',
-        location: 'Perth, Western Australia'
-      },
-      topTechSkill: 'Python, SQL, Apache Spark, AWS, Docker',
-      function: 'Data Engineering',
-      industry: 'Finance, Banking',
-      otherDetails: ['Data Engineer', 'Senior', 'Full-time', 'Major Cities']
-    },
-    {
-      id: 5,
-      postedDate: '4 days ago',
-      postedDateValue: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
-      company: {
-        title: 'Junior Data Analyst',
-        name: 'StartupXYZ',
-        location: 'Adelaide, South Australia'
-      },
-      topTechSkill: 'SQL, Excel, Python, Power BI',
-      function: 'Data Analysis',
-      industry: 'Technology, Startups',
-      otherDetails: ['Data Analyst', 'Entry Level', 'Full-time', 'Regional']
+  const mapApiRowsToJobs = (rows: any[]) => {
+    return rows.map((r: any, idx: number) => {
+      const postedVal = r?.posted_date?.value || r?.posted_date || '';
+      const dateObj = postedVal ? new Date(postedVal) : new Date();
+      const details: string[] = [];
+      if (r?.role_cat) details.push(String(r.role_cat));
+      if (r?.exp_level) details.push(String(r.exp_level));
+      if (r?.location_type) details.push(String(r.location_type));
+      if (r?.sec_clearance) details.push('Clearance');
+      return {
+        id: idx + 1,
+        apiId: r?.id || '',
+        url: r?.url || '',
+        postedDate: postedVal,
+        postedDateValue: dateObj,
+        company: {
+          title: r?.job_title || '',
+          name: r?.company_name || '',
+          location: r?.location || [r?.city, r?.state].filter(Boolean).join(', '),
+        },
+        topTechSkill: r?.top_tech_skills || '',
+        function: r?.function || '',
+        industry: r?.industry || '',
+        otherDetails: details,
+      };
+    });
+  };
+
+  const mapSavedRowsToJobs = (rows: any[]) => {
+    return rows.map((r: any, idx: number) => {
+      const postedVal = r?.posted_date?.value || r?.posted_date || '';
+      const dateObj = postedVal ? new Date(postedVal) : new Date();
+      const details: string[] = [];
+      if (r?.role_cat) details.push(String(r.role_cat));
+      if (r?.exp_level) details.push(String(r.exp_level));
+      if (r?.location_type) details.push(String(r.location_type));
+      if (r?.sec_clearance) details.push('Clearance');
+      return {
+        id: idx + 1,
+        apiId: r?.job_id || r?.id || '',
+        url: r?.url || '',
+        postedDate: postedVal,
+        postedDateValue: dateObj,
+        company: {
+          title: r?.job_title || '',
+          name: r?.company_name || '',
+          location: r?.location || [r?.city, r?.state].filter(Boolean).join(', '),
+        },
+        topTechSkill: r?.top_tech_skills || '',
+        function: r?.function || '',
+        industry: r?.industry || '',
+        otherDetails: details,
+        status: r?.status,
+      };
+    });
+  };
+
+  const mapLocationType = (val?: string) => {
+    if (!val) return undefined;
+    if (val === 'major-cities') return 'Major city';
+    if (val === 'regional') return 'Regional / Remote';
+    return val;
+  };
+
+  const mapStateCodeToName = (code?: string) => {
+    if (!code) return undefined;
+    const stateMap: { [key: string]: string } = {
+      'nsw': 'New South Wales',
+      'vic': 'Victoria',
+      'qld': 'Queensland',
+      'wa': 'Western Australia',
+      'sa': 'South Australia',
+      'tas': 'Tasmania',
+      'act': 'ACT',
+      'nt': 'Northern Territory',
+    };
+    return stateMap[code.toLowerCase()] || code;
+  };
+
+  const toTitleCase = (str?: string) => {
+    if (!str) return undefined;
+    return str
+      .split(' ')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  };
+
+  const buildQueryParams = (page: number, lim: number) => {
+    const joinOrUndefined = (arr?: string[], mapper?: (v: string) => string) => {
+      if (!arr || arr.length === 0) return undefined;
+      const mapped = mapper ? arr.map(mapper) : arr;
+      return mapped.join(',');
+    };
+    const qp: Record<string, string> = {};
+    qp.limit = String(lim);
+    qp.page = String(page);
+    qp.search = 'null';
+    if (filters.postedDate) {
+      try {
+        qp.posted_date = format(filters.postedDate, 'yyyy-MM-dd');
+      } catch {}
     }
-  ];
+    const roleJoined = joinOrUndefined(filters.roleCategory, v => toTitleCase(v.replace('-', ' ')) as string);
+    if (roleJoined) qp.role_cat = roleJoined;
+    const statesJoined = joinOrUndefined(filters.locationState, c => mapStateCodeToName(c) as string);
+    if (statesJoined) qp.state = statesJoined;
+    const expJoined = joinOrUndefined(filters.experienceLevel, v => toTitleCase(v.replace('-', ' ')) as string);
+    if (expJoined) qp.exp_level = expJoined;
+    const locTypeJoined = joinOrUndefined(filters.locationType, v => mapLocationType(v) as string);
+    if (locTypeJoined) qp.location_type = locTypeJoined;
+    if (filters.function) qp.function = filters.function;
+    if (filters.techSkills) qp.top_tech_skills = filters.techSkills;
+    if (filters.industry) qp.industry = filters.industry;
+    return qp;
+  };
+
+  const toQueryString = (qp: Record<string, string>) =>
+    Object.entries(qp)
+      .filter(([, v]) => v !== undefined && v !== null && v !== '')
+      .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+      .join('&');
+
+  const fetchPage = async (dataset: 'all' | 'hidden' | 'junior', page: number) => {
+    setIsLoading(true);
+    const qp = buildQueryParams(page, limit);
+    const qs = toQueryString(qp);
+    const endpoint =
+      dataset === 'all' ? 'getAllJobs' : dataset === 'hidden' ? 'hiddenJobs' : 'juniorJobs';
+    const url = `/api/jobs/${endpoint}?${qs}`;
+    try {
+      const resp = await apiInstance.get(url);
+      const rows = Array.isArray(resp?.data?.data) ? resp.data.data : [];
+      setJobs(mapApiRowsToJobs(rows));
+      setCurrentPage(page);
+      setLastCount(rows.length || 0);
+      // Grow page numbers if we got a full page
+      setKnownMaxPage(prev => {
+        if ((rows.length || 0) >= limit) {
+          return Math.max(prev, page + 1);
+        }
+        return Math.max(prev, page);
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchSavedPage = async (page: number) => {
+    setIsLoading(true);
+    const qp = buildQueryParams(page, limit);
+    const qs = toQueryString(qp);
+    const url = `/api/jobs/getSavedJobs?${qs}`;
+    try {
+      const resp = await apiInstance.get(url);
+      const rows = Array.isArray(resp?.data?.data) ? resp.data.data : [];
+      setJobs(mapSavedRowsToJobs(rows));
+      setCurrentPage(page);
+      setLastCount(rows.length || 0);
+      setKnownMaxPage(prev => {
+        if ((rows.length || 0) >= limit) {
+          return Math.max(prev, page + 1);
+        }
+        return Math.max(prev, page);
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleFiltersChange = (newFilters: JobFilters) => {
     setFilters(newFilters);
@@ -140,116 +244,54 @@ const JobDatabase: React.FC = () => {
     setSortOrder(prev => prev === 'latest' ? 'oldest' : 'latest');
   };
 
-  // Filter and sort jobs based on active tab, filters, and sort order
-  const getDisplayedJobs = () => {
-    let filteredJobs = jobData;
-    
-    // Apply saved jobs filter if on tracker tab
+  // Compute displayed jobs: sort and apply tracker filter
+  const displayedJobs = useMemo(() => {
+    const base = [...jobs];
+    base.sort((a, b) => {
+      const tA = a.postedDateValue?.getTime?.() || 0;
+      const tB = b.postedDateValue?.getTime?.() || 0;
+      return sortOrder === 'latest' ? tB - tA : tA - tB;
+    });
     if (activeTab === 'tracker') {
-      filteredJobs = jobData.filter(job => savedJobs.has(job.id));
+      // On tracker tab we already fetch only saved jobs, so show all loaded rows
+      return base;
     }
-    
-    // Apply all other filters
-    filteredJobs = filteredJobs.filter(job => {
-      // Posted Date filter
-      if (filters.postedDate) {
-        const selectedDate = filters.postedDate;
-        const jobDate = job.postedDateValue;
-        
-        // Check if job was posted on the selected date
-        const isSameDay = selectedDate.getDate() === jobDate.getDate() &&
-                         selectedDate.getMonth() === jobDate.getMonth() &&
-                         selectedDate.getFullYear() === jobDate.getFullYear();
-        
-        if (!isSameDay) return false;
-      }
-      
-      // Role Category filter
-      if (filters.roleCategory.length > 0) {
-        const jobTitle = job.company.title.toLowerCase();
-        const jobDetails = job.otherDetails.join(' ').toLowerCase();
-        const hasMatchingRole = filters.roleCategory.some(role => {
-          const searchTerm = role.replace('-', ' ').toLowerCase();
-          return jobTitle.includes(searchTerm) || jobDetails.includes(searchTerm);
-        });
-        if (!hasMatchingRole) return false;
-      }
-      
-      // Location State filter
-      if (filters.locationState.length > 0) {
-        const location = job.company.location.toLowerCase();
-        const hasMatchingLocation = filters.locationState.some(state => {
-          // Map state codes to full names for matching
-          const stateMap: { [key: string]: string[] } = {
-            'nsw': ['new south wales', 'sydney'],
-            'vic': ['victoria', 'melbourne'],
-            'qld': ['queensland', 'brisbane'],
-            'wa': ['western australia', 'perth'],
-            'sa': ['south australia', 'adelaide'],
-            'tas': ['tasmania', 'hobart'],
-            'act': ['act', 'canberra'],
-            'nt': ['northern territory', 'darwin']
-          };
-          
-          const searchTerms = stateMap[state.toLowerCase()] || [state.toLowerCase()];
-          return searchTerms.some(term => location.includes(term));
-        });
-        if (!hasMatchingLocation) return false;
-      }
-      
-      // Experience Level filter
-      if (filters.experienceLevel.length > 0) {
-        const otherDetails = job.otherDetails.join(' ').toLowerCase();
-        const hasMatchingExperience = filters.experienceLevel.some(experience => 
-          otherDetails.includes(experience.replace('-', ' '))
-        );
-        if (!hasMatchingExperience) return false;
-      }
-      
-      // Location Type filter
-      if (filters.locationType.length > 0) {
-        const otherDetails = job.otherDetails.join(' ').toLowerCase();
-        const hasMatchingLocationType = filters.locationType.some(locationType => 
-          otherDetails.includes(locationType.replace('-', ' '))
-        );
-        if (!hasMatchingLocationType) return false;
-      }
-      
-      // Function filter
-      if (filters.function) {
-        const jobFunction = job.function.toLowerCase();
-        const filterFunction = filters.function.toLowerCase();
-        if (!jobFunction.includes(filterFunction)) return false;
-      }
-      
-      // Tech Skills filter
-      if (filters.techSkills) {
-        const skills = job.topTechSkill.toLowerCase();
-        const filterSkills = filters.techSkills.toLowerCase();
-        if (!skills.includes(filterSkills)) return false;
-      }
-      
-      // Industry filter
-      if (filters.industry) {
-        const jobIndustry = job.industry.toLowerCase();
-        const filterIndustry = filters.industry.toLowerCase();
-        if (!jobIndustry.includes(filterIndustry)) return false;
-      }
-      
-      return true;
-    });
-    
-    // Sort by posted date
-    const sortedJobs = [...filteredJobs].sort((a, b) => {
-      if (sortOrder === 'latest') {
-        return b.postedDateValue.getTime() - a.postedDateValue.getTime();
-      } else {
-        return a.postedDateValue.getTime() - b.postedDateValue.getTime();
-      }
-    });
-    
-    return sortedJobs;
+    return base;
+  }, [jobs, sortOrder, activeTab, savedJobs]);
+
+  const handleApplyDataset = (type: 'all' | 'hidden' | 'junior', rows: any[]) => {
+    setCurrentDataset(type);
+    setJobs(mapApiRowsToJobs(rows));
+    setCurrentPage(1);
+    setLastCount(rows.length || 0);
+    setKnownMaxPage(rows.length >= limit ? 2 : 1);
   };
+
+  // Auto-fetch when filters or dataset change (page resets to 1)
+  useEffect(() => {
+    // Refetch page 1 on filter or dataset change
+    setKnownMaxPage(1);
+    if (activeTab === 'tracker') {
+      fetchSavedPage(1).catch(console.error);
+    } else {
+      fetchPage(currentDataset, 1).catch(console.error);
+    }
+  }, [currentDataset, JSON.stringify(filters), activeTab]);
+
+  // Load saved jobs when switching to tracker tab
+  useEffect(() => {
+    if (activeTab !== 'tracker') return;
+    fetchSavedPage(1).catch(console.error);
+  }, [activeTab]);
+
+  // Ensure default All Jobs load when switching to Database tab
+  useEffect(() => {
+    if (activeTab === 'database') {
+      setCurrentDataset('all');
+      setKnownMaxPage(1);
+      fetchPage('all', 1).catch(console.error);
+    }
+  }, [activeTab]);
 
   return (
     <MainLayout>
@@ -344,6 +386,8 @@ const JobDatabase: React.FC = () => {
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
                 onClearFilters={handleClearFilters}
+                onApplyDataset={handleApplyDataset}
+                currentDataset={currentDataset}
               />
 
               {/* Job Statistics */}
@@ -363,12 +407,53 @@ const JobDatabase: React.FC = () => {
               </div>
 
               {/* Job Table */}
+              {isLoading && (
+                <div className="bg-white p-4 rounded-lg shadow-sm mb-4 flex items-center gap-3">
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-datacareer-darkBlue rounded-full animate-spin" />
+                  <span className="text-sm text-gray-600">Loading results…</span>
+                </div>
+              )}
               <JobTable 
-                jobs={getDisplayedJobs()} 
+                jobs={displayedJobs} 
                 savedJobs={savedJobs}
                 onSaveJob={handleSaveJob}
                 activeTab={activeTab}
               />
+
+              {/* Pagination */}
+              <div className="flex items-center justify-center gap-3 mt-4">
+                <button
+                  className="px-3 py-1 text-sm rounded border hover:bg-gray-50 disabled:opacity-50"
+                  disabled={currentPage <= 1 || isLoading}
+                  onClick={() => (activeTab === 'tracker' ? fetchSavedPage(currentPage - 1) : fetchPage(currentDataset, currentPage - 1))}
+                >
+                  Prev
+                </button>
+                {/* Numbered pages (growing window) */}
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: knownMaxPage }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      className={`min-w-[28px] h-7 px-2 text-sm rounded border ${
+                        pageNum === currentPage
+                          ? 'bg-datacareer-darkBlue text-white border-datacareer-darkBlue'
+                          : 'hover:bg-gray-50'
+                      }`}
+                      disabled={isLoading}
+                      onClick={() => (activeTab === 'tracker' ? fetchSavedPage(pageNum) : fetchPage(currentDataset, pageNum))}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  className="px-3 py-1 text-sm rounded border hover:bg-gray-50 disabled:opacity-50"
+                  disabled={lastCount < limit || isLoading}
+                  onClick={() => (activeTab === 'tracker' ? fetchSavedPage(currentPage + 1) : fetchPage(currentDataset, currentPage + 1))}
+                >
+                  Next
+                </button>
+              </div>
             </div>
 
             {/* Right Sidebar */}

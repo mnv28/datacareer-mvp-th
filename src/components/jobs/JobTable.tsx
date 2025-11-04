@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { apiInstance } from '@/api/axiosApi';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,8 +10,10 @@ import shareIcon from '../../assets/share.svg';
 import industryIcon from '../../assets/industry.svg';
 
 interface Job {
-  id: number;
+  id: number; // local row id
+  apiId?: string; // backend job id
   postedDate: string;
+  url?: string;
   company: {
     title: string;
     name: string;
@@ -20,6 +23,7 @@ interface Job {
   function: string;
   industry: string;
   otherDetails: string[];
+  status?: string; // optional server status for tracker,
 }
 
 interface JobTableProps {
@@ -31,12 +35,98 @@ interface JobTableProps {
 
 const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeTab }) => {
   const [jobStatuses, setJobStatuses] = useState<{ [key: number]: string }>({});
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    mode: 'status' | 'save' | null;
+    job: Job | null;
+    newUiStatus: string | null;
+  }>({ open: false, mode: null, job: null, newUiStatus: null });
+
+  const apiStatusToUi = (s?: string) => {
+    if (!s) return undefined;
+    const trimmed = s.trim().toLowerCase();
+    if (trimmed === 'yet to apply') return 'yet-to-apply';
+    if (trimmed === 'first contact') return 'first-contact';
+    if (trimmed === 'applied') return 'applied';
+    if (trimmed === 'interview') return 'interview';
+    if (trimmed === 'rejected') return 'rejected';
+    return 'other';
+  };
+
+  const uiStatusToApi = (s: string) => {
+    const map: Record<string, string> = {
+      'yet-to-apply': 'Yet to Apply',
+      'first-contact': 'First Contact',
+      'applied': 'Applied',
+      'interview': 'Interview',
+      'rejected': 'Rejected',
+      'other': 'Other',
+    };
+    return map[s] || 'Other';
+  };
+
+  // Initialize statuses from props (e.g., Saved Jobs tab)
+  useEffect(() => {
+    const initial: { [key: number]: string } = {};
+    jobs.forEach(j => {
+      const ui = apiStatusToUi(j.status);
+      if (ui) initial[j.id] = ui;
+    });
+    if (Object.keys(initial).length > 0) setJobStatuses(initial);
+  }, [jobs]);
 
   const handleStatusChange = (jobId: number, status: string) => {
     setJobStatuses(prev => ({
       ...prev,
       [jobId]: status
     }));
+  };
+
+  const saveJobToServer = async (apiId?: string) => {
+    if (!apiId) return;
+    try {
+      await apiInstance.post('/api/jobs/saveJob', {
+        job_id: apiId,
+        status: 'Yet to Apply',
+      });
+    } catch (e) {
+      console.error('Failed to save job', e);
+    }
+  };
+
+  const updateJobStatusOnServer = async (apiId?: string, status?: string) => {
+    if (!apiId || !status) return;
+    try {
+      await apiInstance.post('/api/jobs/updateJobStatus', {
+        job_id: apiId,
+        status: uiStatusToApi(status),
+      });
+    } catch (e) {
+      console.error('Failed to update job status', e);
+    }
+  };
+
+  const confirmAndUpdateStatus = (job: Job, newUiStatus: string) => {
+    // Open center modal; selection not applied until confirmed
+    setConfirmModal({ open: true, mode: 'status', job, newUiStatus });
+  };
+
+  const performConfirm = () => {
+    if (!confirmModal.open || !confirmModal.job) return;
+    const job = confirmModal.job;
+    if (confirmModal.mode === 'status' && confirmModal.newUiStatus) {
+      const newUiStatus = confirmModal.newUiStatus;
+      handleStatusChange(job.id, newUiStatus);
+      updateJobStatusOnServer(job.apiId, newUiStatus);
+    } else if (confirmModal.mode === 'save') {
+      onSaveJob(job.id);
+      saveJobToServer(job.apiId);
+    }
+    setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null });
+  };
+
+  const closeConfirm = () => {
+    setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null });
   };
 
   const getStatusColor = (status: string) => {
@@ -59,7 +149,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
   };
 
   const formatStatusName = (status: string) => {
-    return status.split('-').map(word => 
+    return status.split('-').map(word =>
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ');
   };
@@ -109,6 +199,42 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
 
   return (
     <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      {/* Confirmation Modal */}
+      {confirmModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={closeConfirm} />
+          <div className="relative bg-white rounded-lg shadow-lg w-full max-w-sm mx-4 p-5">
+            <h3 className="text-base font-semibold text-gray-900 mb-2">
+              {confirmModal.mode === 'save' ? 'Save this job?' : 'Confirm status change'}
+            </h3>
+            {confirmModal.mode === 'status' && (
+              <p className="text-sm text-gray-600 mb-4">
+                Are you sure you want to change status to{' '}
+                <span className="font-medium">{formatStatusName(confirmModal.newUiStatus || '')}</span>?
+              </p>
+            )}
+            {confirmModal.mode === 'save' && (
+              <p className="text-sm text-gray-600 mb-4">
+                This job will be added to your Saved Jobs with status <span className="font-medium">Yet to Apply</span>.
+              </p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-3 py-1 rounded border text-sm hover:bg-gray-50"
+                onClick={closeConfirm}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-3 py-1 rounded bg-datacareer-darkBlue text-white text-sm hover:opacity-90"
+                onClick={performConfirm}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Table Header */}
       <div className="bg-gray-50 border-b px-6 py-4">
         <div className="hidden lg:grid grid-cols-12 gap-4 items-center text-sm font-medium text-gray-700">
@@ -205,7 +331,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
                 <div className="col-span-1">
                   <Select
                     value={jobStatuses[job.id] || 'yet-to-apply'}
-                    onValueChange={(value) => handleStatusChange(job.id, value)}
+                    onValueChange={(value) => confirmAndUpdateStatus(job, value)}
                   >
                     <SelectTrigger className="h-9 text-xs whitespace-nowrap">
                       <SelectValue placeholder="Select status" />
@@ -225,15 +351,23 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
               {/* Actions */}
               <div className="col-span-1">
                 <div className="flex justify-center gap-6">
-                  <div className="cursor-pointer" onClick={() => onSaveJob(job.id)}>
-                   <img 
-                       src={savedJobs.has(job.id) ? savedIcon : saveIcon} 
-                       alt="Save" 
-                       className="h-5 w-5" 
-                     />
+                  <div
+                    className="cursor-pointer"
+                    onClick={() => setConfirmModal({ open: true, mode: 'save', job, newUiStatus: null })}
+                  >
+                    <img
+                      src={savedJobs.has(job.id) ? savedIcon : saveIcon}
+                      alt="Save"
+                      className="h-5 w-5"
+                    />
                   </div>
-                  <div className="cursor-pointer" onClick={() => console.log('Share all jobs')}>
-                    <img src={shareIcon} alt="Share All" className="h-5 w-5 hover:opacity-70" />
+                  <div
+                    className="cursor-pointer"
+                    onClick={() => {
+                      if (job.url) window.open(job.url, '_blank', 'noopener,noreferrer');
+                    }}
+                  >
+                    <img src={shareIcon} alt="Open Link" className="h-5 w-5 hover:opacity-70" />
                   </div>
                 </div>
               </div>
@@ -268,7 +402,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
                   <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
                   <Select
                     value={jobStatuses[job.id] || 'yet-to-apply'}
-                    onValueChange={(value) => handleStatusChange(job.id, value)}
+                    onValueChange={(value) => confirmAndUpdateStatus(job, value)}
                   >
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Select status" />
@@ -295,18 +429,21 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
                     variant="ghost"
                     size="sm"
                     className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
-                    onClick={() => onSaveJob(job.id)}
+                    onClick={() => setConfirmModal({ open: true, mode: 'save', job, newUiStatus: null })}
                   >
-                    <img 
-                      src={savedJobs.has(job.id) ? savedIcon : saveIcon} 
-                      alt="Save" 
-                      className="h-4 w-4" 
+                    <img
+                      src={savedJobs.has(job.id) ? savedIcon : saveIcon}
+                      alt="Save"
+                      className="h-4 w-4"
                     />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                    onClick={() => {
+                      if (job.url) window.open(job.url, '_blank', 'noopener,noreferrer');
+                    }}
                   >
                     <img src={shareIcon} alt="External Link" className="h-4 w-4" />
                   </Button>

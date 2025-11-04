@@ -1,4 +1,5 @@
 import React from 'react';
+import { apiInstance } from '@/api/axiosApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; 
@@ -23,12 +24,16 @@ interface JobFilterBarProps {
   filters: JobFilters;
   onFiltersChange: (filters: JobFilters) => void;
   onClearFilters: () => void;
+  onApplyDataset?: (type: 'all' | 'hidden' | 'junior', rows: any[]) => void;
+  currentDataset?: 'all' | 'hidden' | 'junior';
 }
 
 const JobFilterBar: React.FC<JobFilterBarProps> = ({
   filters,
   onFiltersChange,
-  onClearFilters
+  onClearFilters,
+  onApplyDataset,
+  currentDataset
 }) => {
   const [openPopovers, setOpenPopovers] = React.useState<{
     roleCategory: boolean;
@@ -83,6 +88,185 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
     }
     return value !== '' && value !== undefined && value !== null;
   });
+
+  // =====================
+  // Download helpers
+  // =====================
+  // API base is provided by apiInstance
+
+  const mapLocationType = (val?: string) => {
+    if (!val) return undefined;
+    if (val === 'major-cities') return 'Major city';
+    if (val === 'regional') return 'Regional / Remote';
+    return val;
+  };
+
+  const mapStateCodeToName = (code?: string) => {
+    if (!code) return undefined;
+    const stateMap: { [key: string]: string } = {
+      'nsw': 'New South Wales',
+      'vic': 'Victoria',
+      'qld': 'Queensland',
+      'wa': 'Western Australia',
+      'sa': 'South Australia',
+      'tas': 'Tasmania',
+      'act': 'ACT',
+      'nt': 'Northern Territory',
+    };
+    return stateMap[code.toLowerCase()] || code;
+  };
+
+  const toTitleCase = (str?: string) => {
+    if (!str) return undefined;
+    return str
+      .split(' ')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  };
+
+  const buildQueryParams = (currentFilters: JobFilters) => {
+    // Support multi-select: join with commas
+    const joinOrUndefined = (arr?: string[], mapper?: (v: string) => string) => {
+      if (!arr || arr.length === 0) return undefined;
+      const mapped = mapper ? arr.map(mapper) : arr;
+      return mapped.join(',');
+    };
+    const qp: Record<string, string> = {};
+
+    // Defaults (align with pagination: 10 per page)
+    qp.limit = '10';
+    qp.page = '1';
+    qp.search = 'null';
+
+    if (currentFilters.postedDate) {
+      try {
+        qp.posted_date = format(currentFilters.postedDate, 'yyyy-MM-dd');
+      } catch {}
+    }
+    const roleJoined = joinOrUndefined(currentFilters.roleCategory, v => toTitleCase(v.replace('-', ' ')) as string);
+    if (roleJoined) qp.role_cat = roleJoined;
+
+    const statesJoined = joinOrUndefined(currentFilters.locationState, c => mapStateCodeToName(c) as string);
+    if (statesJoined) qp.state = statesJoined;
+
+    const expJoined = joinOrUndefined(currentFilters.experienceLevel, v => toTitleCase(v.replace('-', ' ')) as string);
+    if (expJoined) qp.exp_level = expJoined;
+
+    const locTypeJoined = joinOrUndefined(currentFilters.locationType, v => mapLocationType(v) as string);
+    if (locTypeJoined) qp.location_type = locTypeJoined;
+
+    if (currentFilters.function) qp.function = currentFilters.function;
+    if (currentFilters.techSkills) qp.top_tech_skills = currentFilters.techSkills;
+    if (currentFilters.industry) qp.industry = currentFilters.industry;
+
+    return qp;
+  };
+
+  const toQueryString = (qp: Record<string, string>) =>
+    Object.entries(qp)
+      .filter(([, v]) => v !== undefined && v !== null && v !== '')
+      .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+      .join('&');
+
+  const jsonToCsv = (rows: any[]) => {
+    if (!rows || rows.length === 0) return '';
+    const headers = [
+      'posted_date','job_title','company_name','city','state','location','top_tech_skills','function','industry','role_cat','exp_level','sec_clearance','pr_citizenship_req','url','location_type'
+    ];
+    const escape = (val: any) => {
+      if (val === undefined || val === null) return '';
+      const str = String(val).replace(/\r?\n|\r/g, ' ');
+      if (str.includes(',') || str.includes('"')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    };
+    const lines = [headers.join(',')];
+    for (const r of rows) {
+      const posted = r.posted_date && typeof r.posted_date === 'object' ? r.posted_date.value : r.posted_date;
+      const line = [
+        posted,
+        r.job_title,
+        r.company_name,
+        r.city,
+        r.state,
+        r.location,
+        r.top_tech_skills,
+        r.function,
+        r.industry,
+        r.role_cat,
+        r.exp_level,
+        r.sec_clearance,
+        r.pr_citizenship_req,
+        r.url,
+        r.location_type,
+      ].map(escape).join(',');
+      lines.push(line);
+    }
+    return lines.join('\n');
+  };
+
+  const triggerDownload = (csv: string, filename: string) => {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const fetchRows = async (endpoint: string): Promise<any[]> => {
+    const qp = buildQueryParams(filters);
+    const qs = toQueryString(qp);
+    const url = `/api/jobs/${endpoint}?${qs}`;
+    console.log('Fetching jobs with filters ->', qp, 'URL:', url);
+    const resp = await apiInstance.get(url);
+    const rows = Array.isArray(resp?.data?.data) ? resp.data.data : [];
+    return rows;
+  };
+
+  const handleDownloadAll = async () => {
+    try {
+      const rows = await fetchRows('getAllJobs');
+      onApplyDataset && onApplyDataset('all', rows);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDownloadHidden = async () => {
+    try {
+      const rows = await fetchRows('hiddenJobs');
+      onApplyDataset && onApplyDataset('hidden', rows);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDownloadJunior = async () => {
+    try {
+      const rows = await fetchRows('juniorJobs');
+      onApplyDataset && onApplyDataset('junior', rows);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDownloadCurrent = async () => {
+    try {
+      const dataset = currentDataset || 'all';
+      const endpoint = dataset === 'all' ? 'getAllJobs' : dataset === 'hidden' ? 'hiddenJobs' : 'juniorJobs';
+      const rows = await fetchRows(endpoint);
+      const filename = dataset === 'all' ? 'all_jobs.csv' : dataset === 'hidden' ? 'hidden_jobs.csv' : 'junior_jobs.csv';
+      const csv = jsonToCsv(rows);
+      triggerDownload(csv, filename);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm border mb-4">
@@ -440,6 +624,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
               <Button
                 variant="outline"
                 className="flex items-center gap-2 text-gray-700 border-gray-300 hover:bg-gray-50 text-xs sm:text-sm"
+                onClick={handleDownloadAll}
               >
                 <span className="hidden sm:inline">All Jobs (CSV)</span>
                 <span className="sm:hidden">All Jobs</span>
@@ -447,6 +632,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
               <Button
                 variant="outline"
                 className="flex items-center gap-2 text-gray-700 border-gray-300 hover:bg-gray-50 text-xs sm:text-sm"
+                onClick={handleDownloadHidden}
               >
                 <span className="hidden sm:inline">Hidden data jobs (CSV)</span>
                 <span className="sm:hidden">Hidden Jobs</span>
@@ -454,6 +640,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
               <Button
                 variant="outline"
                 className="flex items-center gap-2 text-gray-700 border-gray-300 hover:bg-gray-50 text-xs sm:text-sm"
+                onClick={handleDownloadJunior}
               >
                 <span className="hidden sm:inline">Junior data jobs (CSV)</span>
                 <span className="sm:hidden">Junior Jobs</span>
@@ -464,6 +651,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
             <Button
               variant="outline"
               className="flex items-center gap-2 text-gray-700 border-gray-300 hover:bg-gray-50 whitespace-nowrap text-xs sm:text-sm"
+              onClick={handleDownloadCurrent}
             >
               Download 
             </Button>
@@ -493,7 +681,9 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                 if (value) {
                   // Format the value for display
                   let displayValue = value;
-                  if (key === 'locationState' && Array.isArray(value) && value.length > 0) {
+                  if (key === 'postedDate' && value instanceof Date) {
+                    displayValue = format(value, 'yyyy-MM-dd');
+                  } else if (key === 'locationState' && Array.isArray(value) && value.length > 0) {
                     displayValue = value.map(state => getStateFullName(state)).join(', ');
                   } else if (Array.isArray(value) && value.length > 0) {
                     displayValue = value.join(', ');
