@@ -11,6 +11,7 @@ import { ChevronDown, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
 import { Company, Question } from "@/components/questions/QuestionList"; // Import types
 import { apiInstance } from "@/api/axiosApi";
 
+// Post Job DB
 
 // Define types based on the expected data structure after fetching and transformation
 // interface Domain {
