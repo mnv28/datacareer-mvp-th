@@ -763,39 +763,40 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
             </div>
             <div className="flex flex-wrap gap-2 mt-2">
               {Object.entries(filters).map(([key, value]) => {
-                if (value) {
-                  // Format the value for display
-                  let displayValue = value;
-                  if (key === 'postedDate' && value instanceof Date) {
-                    displayValue = format(value, 'yyyy-MM-dd');
-                  } else if (key === 'locationState' && Array.isArray(value) && value.length > 0) {
-                    displayValue = value.map(state => getStateFullName(state)).join(', ');
-                  } else if (Array.isArray(value) && value.length > 0) {
-                    displayValue = value.join(', ');
-                  }
-                  
-                  return (
-                    <span
-                      key={key}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
-                    >
-                      {key}: {displayValue}
-                      <button
-                        onClick={() => {
-                          const clearedValue = key === 'postedDate' ? undefined : (Array.isArray(value) ? [] : '');
-                          handlePendingFilterChange(key as keyof JobFilters, clearedValue);
-                          // Also apply immediately when removing from active filters
-                          const newFilters = { ...pendingFilters, [key]: clearedValue };
-                          onFiltersChange(newFilters);
-                        }}
-                        className="ml-1 hover:text-blue-600"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  );
+                // Skip empty values: empty arrays, empty strings, or undefined/null
+                if (Array.isArray(value) && value.length === 0) return null;
+                if (value === '' || value === undefined || value === null) return null;
+
+                // Format the value for display
+                let displayValue: any = value;
+                if (key === 'postedDate' && value instanceof Date) {
+                  displayValue = format(value, 'yyyy-MM-dd');
+                } else if (key === 'locationState' && Array.isArray(value)) {
+                  displayValue = value.map(state => getStateFullName(state)).join(', ');
+                } else if (Array.isArray(value)) {
+                  displayValue = value.join(', ');
                 }
-                return null;
+
+                return (
+                  <span
+                    key={key}
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                  >
+                    {key}: {displayValue}
+                    <button
+                      onClick={() => {
+                        const clearedValue = key === 'postedDate' ? undefined : (Array.isArray(value) ? [] : '');
+                        handlePendingFilterChange(key as keyof JobFilters, clearedValue);
+                        // Also apply immediately when removing from active filters
+                        const newFilters = { ...pendingFilters, [key]: clearedValue };
+                        onFiltersChange(newFilters);
+                      }}
+                      className="ml-1 hover:text-blue-600"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                );
               })}
             </div>
           </div>
