@@ -41,6 +41,10 @@ const JobDatabase: React.FC = () => {
   const [lastCount, setLastCount] = useState<number>(0);
   const [knownMaxPage, setKnownMaxPage] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [jobStats, setJobStats] = useState<{ last7Days: number; last30Days: number }>({
+    last7Days: 0,
+    last30Days: 0,
+  });
 
   const mapApiRowsToJobs = (rows: any[]) => {
     return rows.map((r: any, idx: number) => {
@@ -139,6 +143,8 @@ const JobDatabase: React.FC = () => {
     qp.limit = String(lim);
     qp.page = String(page);
     qp.search = 'null';
+    // Add sort parameter: 'latest' -> 'desc', 'oldest' -> 'asc', default is 'desc'
+    qp.sort = sortOrder === 'latest' ? 'desc' : 'asc';
     if (filters.postedDate) {
       try {
         qp.posted_date = format(filters.postedDate, 'yyyy-MM-dd');
@@ -177,6 +183,13 @@ const JobDatabase: React.FC = () => {
       setJobs(mapApiRowsToJobs(rows));
       setCurrentPage(page);
       setLastCount(rows.length || 0);
+      // Update job statistics from API response
+      if (resp?.data?.last_7_days !== undefined && resp?.data?.last_30_days !== undefined) {
+        setJobStats({
+          last7Days: resp.data.last_7_days || 0,
+          last30Days: resp.data.last_30_days || 0,
+        });
+      }
       // Grow page numbers if we got a full page
       setKnownMaxPage(prev => {
         if ((rows.length || 0) >= limit) {
@@ -242,22 +255,20 @@ const JobDatabase: React.FC = () => {
 
   const handleSortToggle = () => {
     setSortOrder(prev => prev === 'latest' ? 'oldest' : 'latest');
+    // Reset to page 1 when sort changes
+    setCurrentPage(1);
+    setKnownMaxPage(1);
   };
 
-  // Compute displayed jobs: sort and apply tracker filter
+  // Display jobs as received from API (already sorted)
   const displayedJobs = useMemo(() => {
-    const base = [...jobs];
-    base.sort((a, b) => {
-      const tA = a.postedDateValue?.getTime?.() || 0;
-      const tB = b.postedDateValue?.getTime?.() || 0;
-      return sortOrder === 'latest' ? tB - tA : tA - tB;
-    });
-    if (activeTab === 'tracker') {
-      // On tracker tab we already fetch only saved jobs, so show all loaded rows
-      return base;
-    }
-    return base;
-  }, [jobs, sortOrder, activeTab, savedJobs]);
+    return [...jobs];
+  }, [jobs]);
+
+  const handleDatasetChange = (type: 'all' | 'hidden' | 'junior') => {
+    // Immediately update dataset type for instant UI feedback
+    setCurrentDataset(type);
+  };
 
   const handleApplyDataset = (type: 'all' | 'hidden' | 'junior', rows: any[]) => {
     setCurrentDataset(type);
@@ -267,16 +278,16 @@ const JobDatabase: React.FC = () => {
     setKnownMaxPage(rows.length >= limit ? 2 : 1);
   };
 
-  // Auto-fetch when filters or dataset change (page resets to 1)
+  // Auto-fetch when filters, dataset, or sort order change (page resets to 1)
   useEffect(() => {
-    // Refetch page 1 on filter or dataset change
+    // Refetch page 1 on filter, dataset, or sort order change
     setKnownMaxPage(1);
     if (activeTab === 'tracker') {
       fetchSavedPage(1).catch(console.error);
     } else {
       fetchPage(currentDataset, 1).catch(console.error);
     }
-  }, [currentDataset, JSON.stringify(filters), activeTab]);
+  }, [currentDataset, JSON.stringify(filters), activeTab, sortOrder]);
 
   // Load saved jobs when switching to tracker tab
   useEffect(() => {
@@ -387,6 +398,7 @@ const JobDatabase: React.FC = () => {
                 onFiltersChange={handleFiltersChange}
                 onClearFilters={handleClearFilters}
                 onApplyDataset={handleApplyDataset}
+                onDatasetChange={handleDatasetChange}
                 currentDataset={currentDataset}
               />
 
@@ -394,7 +406,7 @@ const JobDatabase: React.FC = () => {
               <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
                 <div className="flex items-center justify-between">
                   <div className="text-gray-700 text-sm lg:text-base">
-                    <span className="font-semibold">6247</span> (Last 30 days) | <span className="font-semibold">1302</span> (Last 7 days)
+                    <span className="font-semibold">{jobStats.last30Days.toLocaleString()}</span> (Last 30 days) | <span className="font-semibold">{jobStats.last7Days.toLocaleString()}</span> (Last 7 days)
                   </div>
                   <div 
                     className="flex items-center gap-2 cursor-pointer hover:text-datacareer-darkBlue transition-colors cursor-pointer  " 

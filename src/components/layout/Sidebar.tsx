@@ -63,15 +63,15 @@ const Sidebar: React.FC = () => {
       path: '/job-database',
     },
     {
-      name: 'Saved Jobs',
+      name: 'SQL Practice',
       icon: Bookmark,
       path: '/',
     },
-    {
-      name: 'SQL Practice',
-      icon: Code2,
-      path: '/sql-practice',
-    },
+    // {
+    //   name: 'SQL Practice',
+    //   icon: Code2,
+    //   path: '/sql-practice',
+    // },
   ];
 
   const SidebarContent = () => (
@@ -111,7 +111,14 @@ const Sidebar: React.FC = () => {
         })}
 
         {/* Upgrade Button - Show only if user is on free plan */}
-        {userPlan === 'free' && (
+     
+      </nav>
+
+      {/* Bottom Section - Settings & Logout */}
+      <div className="p-3 border-t border-gray-200 space-y-1">
+        {/* User Account Settings Dropdown */}
+        <div>
+             {userPlan === 'free' && (
           <Button
             variant="outline"
             className={`w-full justify-start gap-3 px-3 py-2.5   ${
@@ -126,11 +133,7 @@ const Sidebar: React.FC = () => {
             {!isCollapsed && <span className="text-sm font-medium">Upgrade</span>}
           </Button>
         )}
-      </nav>
-
-      {/* Bottom Section - Settings & Logout */}
-      <div className="p-3 border-t border-gray-200 space-y-1">
-        {/* User Account Settings Dropdown */}
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
