@@ -72,6 +72,21 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
     return stateMap[stateCode.toLowerCase()] || stateCode.toUpperCase();
   };
 
+  // Map internal filter keys to human-friendly labels for the Active Filters chips
+  const getFilterLabel = (key: keyof JobFilters): string => {
+    const map: Record<keyof JobFilters, string> = {
+      postedDate: 'Posted Date',
+      roleCategory: 'Role Category',
+      locationState: 'Location State',
+      experienceLevel: 'Experience Level',
+      locationType: 'Location Type',
+      function: 'Function',
+      techSkills: 'Tech Skills',
+      industry: 'Industry',
+    };
+    return map[key] || String(key);
+  };
+
   // Update pending filters locally (doesn't trigger search)
   const handlePendingFilterChange = (key: keyof JobFilters, value: string | Date | undefined | string[]) => {
     setPendingFilters({
@@ -782,7 +797,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                     key={key}
                     className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
                   >
-                    {key}: {displayValue}
+                    {getFilterLabel(key as keyof JobFilters)}: {displayValue}
                     <button
                       onClick={() => {
                         const clearedValue = key === 'postedDate' ? undefined : (Array.isArray(value) ? [] : '');
