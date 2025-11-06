@@ -29,7 +29,7 @@ interface Job {
 interface JobTableProps {
   jobs: Job[];
   savedJobs: Set<number>;
-  onSaveJob: (jobId: number) => void;
+  onSaveJob: (jobId: number, apiId: string, isSaved: boolean) => void;
   activeTab: 'database' | 'tracker';
 }
 
@@ -136,7 +136,11 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
     } else if (confirmModal.mode === 'save') {
       const isCurrentlySaved = savedJobs.has(job.id);
       const response = await saveJobToServer(job.apiId, isCurrentlySaved);
-      onSaveJob(job.id);
+      
+      // Update parent with API response (add or remove based on isSaved)
+      if (response && job.apiId) {
+        await onSaveJob(job.id, job.apiId, response.isSaved);
+      }
       
       // Show success message in modal
       if (response) {

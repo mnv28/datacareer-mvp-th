@@ -33,6 +33,7 @@ const JobDatabase: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'database' | 'tracker'>('database');
   const [savedJobs, setSavedJobs] = useState<Set<number>>(new Set());
+  const [savedJobApiIds, setSavedJobApiIds] = useState<Set<string>>(new Set());
   const [sortOrder, setSortOrder] = useState<'latest' | 'oldest'>('latest');
   const [jobs, setJobs] = useState<any[]>([]);
   const [currentDataset, setCurrentDataset] = useState<'all' | 'hidden' | 'junior'>('all');
@@ -170,6 +171,24 @@ const JobDatabase: React.FC = () => {
       .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
       .join('&');
 
+  // Fetch saved job IDs from API
+  const fetchSavedJobIds = async (): Promise<Set<string>> => {
+    try {
+      const url = `/api/jobs/getSavedJobs?limit=1000&page=1&search=null`;
+      const resp = await apiInstance.get(url);
+      const rows = Array.isArray(resp?.data?.data) ? resp.data.data : [];
+      const savedIds = new Set<string>();
+      rows.forEach((r: any) => {
+        const jobId = r?.job_id || r?.id;
+        if (jobId) savedIds.add(String(jobId));
+      });
+      return savedIds;
+    } catch (e) {
+      console.error('Failed to fetch saved job IDs', e);
+      return new Set<string>();
+    }
+  };
+
   const fetchPage = async (dataset: 'all' | 'hidden' | 'junior', page: number) => {
     setIsLoading(true);
     const qp = buildQueryParams(page, limit);
@@ -180,7 +199,27 @@ const JobDatabase: React.FC = () => {
     try {
       const resp = await apiInstance.get(url);
       const rows = Array.isArray(resp?.data?.data) ? resp.data.data : [];
-      setJobs(mapApiRowsToJobs(rows));
+      const mappedJobs = mapApiRowsToJobs(rows);
+      setJobs(mappedJobs);
+      
+      // Fetch saved job IDs and update savedJobs state
+      const savedIds = await fetchSavedJobIds();
+      setSavedJobApiIds(savedIds);
+      
+      // Map saved API IDs to local job IDs for current page
+      setSavedJobs(prev => {
+        const newSavedJobs = new Set(prev);
+        // Update saved status for jobs on current page
+        mappedJobs.forEach(job => {
+          if (job.apiId && savedIds.has(String(job.apiId))) {
+            newSavedJobs.add(job.id);
+          } else {
+            newSavedJobs.delete(job.id);
+          }
+        });
+        return newSavedJobs;
+      });
+      
       setCurrentPage(page);
       setLastCount(rows.length || 0);
       // Update job statistics from API response
@@ -202,7 +241,7 @@ const JobDatabase: React.FC = () => {
     }
   };
 
-  const fetchSavedPage = async (page: number) => {
+  const fetchSavedPage = async (page: number, excludeApiId?: string) => {
     setIsLoading(true);
     const qp = buildQueryParams(page, limit);
     const qs = toQueryString(qp);
@@ -210,14 +249,41 @@ const JobDatabase: React.FC = () => {
     try {
       const resp = await apiInstance.get(url);
       const rows = Array.isArray(resp?.data?.data) ? resp.data.data : [];
-      setJobs(mapSavedRowsToJobs(rows));
-      setCurrentPage(page);
-      setLastCount(rows.length || 0);
-      setKnownMaxPage(prev => {
-        if ((rows.length || 0) >= limit) {
-          return Math.max(prev, page + 1);
-        }
-        return Math.max(prev, page);
+      
+      // Filter out excluded job (unsaved job) to handle backend sync delay
+      let filteredRows = rows;
+      if (excludeApiId) {
+        filteredRows = rows.filter((r: any) => {
+          const jobId = r?.job_id || r?.id;
+          return jobId && String(jobId) !== excludeApiId;
+        });
+      }
+      
+      // Also filter based on current savedJobApiIds state (to handle any other unsaved jobs)
+      setSavedJobApiIds(currentSavedIds => {
+        const finalFiltered = filteredRows.filter((r: any) => {
+          const jobId = r?.job_id || r?.id;
+          return jobId && currentSavedIds.has(String(jobId));
+        });
+        const mappedJobs = mapSavedRowsToJobs(finalFiltered);
+        setJobs(mappedJobs);
+        // Mark all jobs as saved in the tracker tab
+        setSavedJobs(prev => {
+          const newSavedJobs = new Set(prev);
+          mappedJobs.forEach(job => {
+            newSavedJobs.add(job.id);
+          });
+          return newSavedJobs;
+        });
+        setCurrentPage(page);
+        setLastCount(mappedJobs.length || 0);
+        setKnownMaxPage(prev => {
+          if ((mappedJobs.length || 0) >= limit) {
+            return Math.max(prev, page + 1);
+          }
+          return Math.max(prev, page);
+        });
+        return currentSavedIds;
       });
     } finally {
       setIsLoading(false);
@@ -241,16 +307,48 @@ const JobDatabase: React.FC = () => {
     });
   };
 
-  const handleSaveJob = (jobId: number) => {
-    setSavedJobs(prev => {
-      const newSavedJobs = new Set(prev);
-      if (newSavedJobs.has(jobId)) {
-        newSavedJobs.delete(jobId);
+  const handleSaveJob = async (jobId: number, apiId: string, isSaved: boolean) => {
+    // Update saved API IDs set
+    setSavedJobApiIds(prev => {
+      const newSet = new Set(prev);
+      if (isSaved) {
+        newSet.add(apiId);
       } else {
-        newSavedJobs.add(jobId);
+        newSet.delete(apiId);
       }
-      return newSavedJobs;
+      return newSet;
     });
+
+    // If we're on the tracker tab and job is unsaved, optimistically remove it from list
+    if (activeTab === 'tracker' && !isSaved) {
+      setJobs(prev => prev.filter(j => j.apiId !== apiId));
+      // Also update savedJobs Set
+      setSavedJobs(prev => {
+        const newSavedJobs = new Set(prev);
+        newSavedJobs.delete(jobId);
+        return newSavedJobs;
+      });
+      // Wait a bit for backend to process the unsave, then refresh
+      await new Promise(resolve => setTimeout(resolve, 300));
+      // Refresh the list to get updated data from server, excluding the unsaved job
+      await fetchSavedPage(currentPage, apiId).catch(console.error);
+    } else {
+      // Update local saved jobs state based on API response
+      setSavedJobs(prev => {
+        const newSavedJobs = new Set(prev);
+        if (isSaved) {
+          newSavedJobs.add(jobId);
+        } else {
+          newSavedJobs.delete(jobId);
+        }
+        return newSavedJobs;
+      });
+
+      // If we're on the tracker tab and job is saved, refresh the saved jobs list
+      if (activeTab === 'tracker' && isSaved) {
+        await fetchSavedPage(currentPage).catch(console.error);
+      }
+    }
   };
 
   const handleSortToggle = () => {
@@ -270,9 +368,28 @@ const JobDatabase: React.FC = () => {
     setCurrentDataset(type);
   };
 
-  const handleApplyDataset = (type: 'all' | 'hidden' | 'junior', rows: any[]) => {
+  const handleApplyDataset = async (type: 'all' | 'hidden' | 'junior', rows: any[]) => {
     setCurrentDataset(type);
-    setJobs(mapApiRowsToJobs(rows));
+    const mappedJobs = mapApiRowsToJobs(rows);
+    setJobs(mappedJobs);
+    
+    // Fetch saved job IDs and update savedJobs state
+    const savedIds = await fetchSavedJobIds();
+    setSavedJobApiIds(savedIds);
+    
+    // Map saved API IDs to local job IDs
+    setSavedJobs(prev => {
+      const newSavedJobs = new Set(prev);
+      mappedJobs.forEach(job => {
+        if (job.apiId && savedIds.has(String(job.apiId))) {
+          newSavedJobs.add(job.id);
+        } else {
+          newSavedJobs.delete(job.id);
+        }
+      });
+      return newSavedJobs;
+    });
+    
     setCurrentPage(1);
     setLastCount(rows.length || 0);
     setKnownMaxPage(rows.length >= limit ? 2 : 1);
