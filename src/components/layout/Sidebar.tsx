@@ -29,7 +29,7 @@ import { logout } from '@/redux/slices/authSlice';
 import { toast } from 'sonner';
 import { useSidebar } from '@/contexts/SidebarContext';
 import logodatacareer from '../../../public/logoDataCareer.png';
-import favicon from '../../../public/favicon.png';
+import favicon from '../../../public/DCA - Full Colour Logo Only (1).svg';
 
 
 const Sidebar: React.FC = () => {
@@ -64,7 +64,7 @@ const Sidebar: React.FC = () => {
     },
     {
       name: 'SQL Practice',
-      icon: Bookmark,
+      icon: Code2,
       path: '/',
     },
     // {
