@@ -40,7 +40,8 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
     mode: 'status' | 'save' | null;
     job: Job | null;
     newUiStatus: string | null;
-  }>({ open: false, mode: null, job: null, newUiStatus: null });
+    saveResponse?: { message: string; action: string; isSaved: boolean } | null;
+  }>({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null });
 
   const apiStatusToUi = (s?: string) => {
     if (!s) return undefined;
@@ -82,15 +83,17 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
     }));
   };
 
-  const saveJobToServer = async (apiId?: string) => {
-    if (!apiId) return;
+  const saveJobToServer = async (apiId?: string, isCurrentlySaved: boolean = false) => {
+    if (!apiId) return null;
     try {
-      await apiInstance.post('/api/jobs/saveJob', {
+      const response = await apiInstance.post('/api/jobs/saveJob', {
         job_id: apiId,
         status: 'Yet to Apply',
       });
+      return response?.data || null;
     } catch (e) {
       console.error('Failed to save job', e);
+      return null;
     }
   };
 
@@ -108,25 +111,55 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
 
   const confirmAndUpdateStatus = (job: Job, newUiStatus: string) => {
     // Open center modal; selection not applied until confirmed
-    setConfirmModal({ open: true, mode: 'status', job, newUiStatus });
+    setConfirmModal({ open: true, mode: 'status', job, newUiStatus, saveResponse: null });
   };
 
-  const performConfirm = () => {
+  const handleSaveClick = (job: Job) => {
+    const isCurrentlySaved = savedJobs.has(job.id);
+    setConfirmModal({ 
+      open: true, 
+      mode: 'save', 
+      job, 
+      newUiStatus: null,
+      saveResponse: null
+    });
+  };
+
+  const performConfirm = async () => {
     if (!confirmModal.open || !confirmModal.job) return;
     const job = confirmModal.job;
     if (confirmModal.mode === 'status' && confirmModal.newUiStatus) {
       const newUiStatus = confirmModal.newUiStatus;
       handleStatusChange(job.id, newUiStatus);
       updateJobStatusOnServer(job.apiId, newUiStatus);
+      setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null });
     } else if (confirmModal.mode === 'save') {
+      const isCurrentlySaved = savedJobs.has(job.id);
+      const response = await saveJobToServer(job.apiId, isCurrentlySaved);
       onSaveJob(job.id);
-      saveJobToServer(job.apiId);
+      
+      // Show success message in modal
+      if (response) {
+        setConfirmModal({ 
+          open: true, 
+          mode: 'save', 
+          job, 
+          newUiStatus: null,
+          saveResponse: response
+        });
+        
+        // Auto-close after 2 seconds
+        setTimeout(() => {
+          setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null });
+        }, 2000);
+      } else {
+        setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null });
+      }
     }
-    setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null });
   };
 
   const closeConfirm = () => {
-    setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null });
+    setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null });
   };
 
   const getStatusColor = (status: string) => {
@@ -205,7 +238,11 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
           <div className="absolute inset-0 bg-black/40" onClick={closeConfirm} />
           <div className="relative bg-white rounded-lg shadow-lg w-full max-w-sm mx-4 p-5">
             <h3 className="text-base font-semibold text-gray-900 mb-2">
-              {confirmModal.mode === 'save' ? 'Save this job?' : 'Confirm status change'}
+              {confirmModal.mode === 'save' 
+                ? (confirmModal.saveResponse 
+                    ? (confirmModal.saveResponse.isSaved ? 'Job Saved!' : 'Job Removed')
+                    : 'Save this job?')
+                : 'Confirm status change'}
             </h3>
             {confirmModal.mode === 'status' && (
               <p className="text-sm text-gray-600 mb-4">
@@ -213,24 +250,46 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
                 <span className="font-medium">{formatStatusName(confirmModal.newUiStatus || '')}</span>?
               </p>
             )}
-            {confirmModal.mode === 'save' && (
+            {confirmModal.mode === 'save' && !confirmModal.saveResponse && (
               <p className="text-sm text-gray-600 mb-4">
-                This job will be added to your Saved Jobs with status <span className="font-medium">Yet to Apply</span>.
+                {savedJobs.has(confirmModal.job?.id || 0)
+                  ? 'This job will be removed from your Saved Jobs.'
+                  : <>This job will be added to your Saved Jobs with status <span className="font-medium">Yet to Apply</span>.</>}
+              </p>
+            )}
+            {confirmModal.mode === 'save' && confirmModal.saveResponse && (
+              <p className={`text-sm mb-4 ${
+                confirmModal.saveResponse.isSaved 
+                  ? 'text-green-600' 
+                  : 'text-gray-600'
+              }`}>
+                {confirmModal.saveResponse.message}
               </p>
             )}
             <div className="flex justify-end gap-2">
-              <button
-                className="px-3 py-1 rounded border text-sm hover:bg-gray-50"
-                onClick={closeConfirm}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-3 py-1 rounded bg-datacareer-darkBlue text-white text-sm hover:opacity-90"
-                onClick={performConfirm}
-              >
-                Confirm
-              </button>
+              {!confirmModal.saveResponse && (
+                <button
+                  className="px-3 py-1 rounded border text-sm hover:bg-gray-50"
+                  onClick={closeConfirm}
+                >
+                  Cancel
+                </button>
+              )}
+              {!confirmModal.saveResponse ? (
+                <button
+                  className="px-3 py-1 rounded bg-datacareer-darkBlue text-white text-sm hover:opacity-90"
+                  onClick={performConfirm}
+                >
+                  Confirm
+                </button>
+              ) : (
+                <button
+                  className="px-3 py-1 rounded bg-datacareer-darkBlue text-white text-sm hover:opacity-90"
+                  onClick={closeConfirm}
+                >
+                  OK
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -353,7 +412,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
                 <div className="flex justify-center gap-6">
                   <div
                     className="cursor-pointer"
-                    onClick={() => setConfirmModal({ open: true, mode: 'save', job, newUiStatus: null })}
+                    onClick={() => handleSaveClick(job)}
                   >
                     <img
                       src={savedJobs.has(job.id) ? savedIcon : saveIcon}
@@ -429,7 +488,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
                     variant="ghost"
                     size="sm"
                     className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
-                    onClick={() => setConfirmModal({ open: true, mode: 'save', job, newUiStatus: null })}
+                    onClick={() => handleSaveClick(job)}
                   >
                     <img
                       src={savedJobs.has(job.id) ? savedIcon : saveIcon}
