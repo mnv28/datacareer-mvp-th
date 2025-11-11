@@ -8,7 +8,7 @@ import saveIcon from '../../assets/save.svg';
 import savedIcon from '../../assets/saved.svg';
 import shareIcon from '../../assets/share.svg';
 import industryIcon from '../../assets/industry.svg';
-
+import { format } from "date-fns";
 interface Job {
   id: number; // local row id
   apiId?: string; // backend job id
@@ -331,7 +331,9 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
               {/* Posted Date */}
               <div className="col-span-1">
                 <div className="text-sm text-gray-600">
-                  {job.postedDate}
+                  {/* {job.postedDate} */}
+                  {format(job.postedDate, "dd-MM-yyyy")}
+
                 </div>
               </div>
 
@@ -466,7 +468,8 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
                   </div>
                 </div>
                 <div className="text-xs text-gray-500">
-                  {job.postedDate}
+                  {/* {job.postedDate} */}
+                  {format(job.postedDate, "dd-MM-yyyy")}
                 </div>
               </div>
 
