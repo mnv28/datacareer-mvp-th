@@ -361,7 +361,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                   className="w-full justify-start text-left font-normal"
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {pendingFilters.postedDate ? format(pendingFilters.postedDate, "PPP") : "Pick a date"}
+                  {pendingFilters.postedDate ? format(pendingFilters.postedDate, "dd-MM-yyyy") : "Pick a date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
