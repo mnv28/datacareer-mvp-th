@@ -77,29 +77,43 @@ const JobDatabase: React.FC = () => {
 
   const mapSavedRowsToJobs = (rows: any[]) => {
     return rows.map((r: any, idx: number) => {
-      const postedVal = r?.posted_date?.value || r?.posted_date || '';
+      // Handle nested job object structure from saved jobs API
+      const jobData = r?.job || r;
+      const postedVal = jobData?.posted_date?.value || jobData?.posted_date || '';
       const dateObj = postedVal ? new Date(postedVal) : new Date();
+      
+      // Format date for display (YYYY-MM-DD format)
+      let formattedDate = '';
+      if (postedVal) {
+        try {
+          formattedDate = format(dateObj, 'yyyy-MM-dd');
+        } catch (e) {
+          // If formatting fails, try to extract date part from ISO string
+          formattedDate = postedVal.split('T')[0] || postedVal;
+        }
+      }
+      
       const details: string[] = [];
-      if (r?.role_cat) details.push(String(r.role_cat));
-      if (r?.exp_level) details.push(String(r.exp_level));
-      if (r?.location_type) details.push(String(r.location_type));
-      if (r?.sec_clearance) details.push('Clearance');
+      if (jobData?.role_cat) details.push(String(jobData.role_cat));
+      if (jobData?.exp_level) details.push(String(jobData.exp_level));
+      if (jobData?.location_type) details.push(String(jobData.location_type));
+      if (jobData?.sec_clearance && jobData.sec_clearance !== '0') details.push('Clearance');
       return {
         id: idx + 1,
-        apiId: r?.job_id || r?.id || '',
-        url: r?.url || '',
-        postedDate: postedVal,
+        apiId: r?.job_id || jobData?.id || r?.id || '',
+        url: jobData?.url || r?.url || '',
+        postedDate: formattedDate || postedVal,
         postedDateValue: dateObj,
         company: {
-          title: r?.job_title || '',
-          name: r?.company_name || '',
-          location: r?.location || [r?.city, r?.state].filter(Boolean).join(', '),
+          title: jobData?.job_title || '',
+          name: jobData?.company_name || '',
+          location: jobData?.location || [jobData?.city, jobData?.state].filter(Boolean).join(', '),
         },
-        topTechSkill: r?.top_tech_skills || '',
-        function: r?.function || '',
-        industry: r?.industry || '',
+        topTechSkill: jobData?.top_tech_skills || '',
+        function: jobData?.function || '',
+        industry: jobData?.industry || '',
         otherDetails: details,
-        status: r?.status,
+        status: r?.status, // status comes from the saved job record, not the job object
       };
     });
   };
@@ -254,36 +268,39 @@ const JobDatabase: React.FC = () => {
       let filteredRows = rows;
       if (excludeApiId) {
         filteredRows = rows.filter((r: any) => {
-          const jobId = r?.job_id || r?.id;
+          const jobId = r?.job_id || r?.job?.id || r?.id;
           return jobId && String(jobId) !== excludeApiId;
         });
       }
       
-      // Also filter based on current savedJobApiIds state (to handle any other unsaved jobs)
-      setSavedJobApiIds(currentSavedIds => {
-        const finalFiltered = filteredRows.filter((r: any) => {
-          const jobId = r?.job_id || r?.id;
-          return jobId && currentSavedIds.has(String(jobId));
+      // Map the saved jobs to the job format
+      const mappedJobs = mapSavedRowsToJobs(filteredRows);
+      setJobs(mappedJobs);
+      
+      // Update savedJobApiIds based on the actual saved jobs from API
+      const savedIds = new Set<string>();
+      filteredRows.forEach((r: any) => {
+        const jobId = r?.job_id || r?.job?.id || r?.id;
+        if (jobId) savedIds.add(String(jobId));
+      });
+      setSavedJobApiIds(savedIds);
+      
+      // Mark all jobs as saved in the tracker tab
+      setSavedJobs(prev => {
+        const newSavedJobs = new Set(prev);
+        mappedJobs.forEach(job => {
+          newSavedJobs.add(job.id);
         });
-        const mappedJobs = mapSavedRowsToJobs(finalFiltered);
-        setJobs(mappedJobs);
-        // Mark all jobs as saved in the tracker tab
-        setSavedJobs(prev => {
-          const newSavedJobs = new Set(prev);
-          mappedJobs.forEach(job => {
-            newSavedJobs.add(job.id);
-          });
-          return newSavedJobs;
-        });
-        setCurrentPage(page);
-        setLastCount(mappedJobs.length || 0);
-        setKnownMaxPage(prev => {
-          if ((mappedJobs.length || 0) >= limit) {
-            return Math.max(prev, page + 1);
-          }
-          return Math.max(prev, page);
-        });
-        return currentSavedIds;
+        return newSavedJobs;
+      });
+      
+      setCurrentPage(page);
+      setLastCount(mappedJobs.length || 0);
+      setKnownMaxPage(prev => {
+        if ((mappedJobs.length || 0) >= limit) {
+          return Math.max(prev, page + 1);
+        }
+        return Math.max(prev, page);
       });
     } finally {
       setIsLoading(false);
