@@ -116,10 +116,10 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
 
   const handleSaveClick = (job: Job) => {
     const isCurrentlySaved = savedJobs.has(job.id);
-    setConfirmModal({ 
-      open: true, 
-      mode: 'save', 
-      job, 
+    setConfirmModal({
+      open: true,
+      mode: 'save',
+      job,
       newUiStatus: null,
       saveResponse: null
     });
@@ -136,22 +136,22 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
     } else if (confirmModal.mode === 'save') {
       const isCurrentlySaved = savedJobs.has(job.id);
       const response = await saveJobToServer(job.apiId, isCurrentlySaved);
-      
+
       // Update parent with API response (add or remove based on isSaved)
       if (response && job.apiId) {
         await onSaveJob(job.id, job.apiId, response.isSaved);
       }
-      
+
       // Show success message in modal
       if (response) {
-        setConfirmModal({ 
-          open: true, 
-          mode: 'save', 
-          job, 
+        setConfirmModal({
+          open: true,
+          mode: 'save',
+          job,
           newUiStatus: null,
           saveResponse: response
         });
-        
+
         // Auto-close after 2 seconds
         setTimeout(() => {
           setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null });
@@ -242,10 +242,10 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
           <div className="absolute inset-0 bg-black/40" onClick={closeConfirm} />
           <div className="relative bg-white rounded-lg shadow-lg w-full max-w-sm mx-4 p-5">
             <h3 className="text-base font-semibold text-gray-900 mb-2">
-              {confirmModal.mode === 'save' 
-                ? (confirmModal.saveResponse 
-                    ? (confirmModal.saveResponse.isSaved ? 'Job Saved!' : 'Job Removed')
-                    : 'Save this job?')
+              {confirmModal.mode === 'save'
+                ? (confirmModal.saveResponse
+                  ? (confirmModal.saveResponse.isSaved ? 'Job Saved!' : 'Job Removed')
+                  : 'Save this job?')
                 : 'Confirm status change'}
             </h3>
             {confirmModal.mode === 'status' && (
@@ -262,11 +262,10 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
               </p>
             )}
             {confirmModal.mode === 'save' && confirmModal.saveResponse && (
-              <p className={`text-sm mb-4 ${
-                confirmModal.saveResponse.isSaved 
-                  ? 'text-green-600' 
+              <p className={`text-sm mb-4 ${confirmModal.saveResponse.isSaved
+                  ? 'text-green-600'
                   : 'text-gray-600'
-              }`}>
+                }`}>
                 {confirmModal.saveResponse.message}
               </p>
             )}
@@ -348,8 +347,23 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
                   </div>
                   <div className="flex items-center gap-1 text-xs text-gray-500">
                     <MapPin className="h-3 w-3" />
-                    {job.company.location}
+                    {(() => {
+                      const locStr = job?.company?.location;
+
+                      if (!locStr) return "N/A";
+
+                      try {
+                        // Check if it's a stringified object
+                        const parsed = JSON.parse(locStr.replace(/'/g, '"'));
+                        // If parsed has 'location' key, return it
+                        return parsed.location || locStr;
+                      } catch (err) {
+                        // If JSON.parse fails, it's a normal string
+                        return locStr;
+                      }
+                    })()}
                   </div>
+
                 </div>
               </div>
 
