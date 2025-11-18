@@ -38,9 +38,8 @@ const JobDatabase: React.FC = () => {
   const [jobs, setJobs] = useState<any[]>([]);
   const [currentDataset, setCurrentDataset] = useState<'all' | 'hidden' | 'junior'>('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [limit] = useState<number>(10);
-  const [lastCount, setLastCount] = useState<number>(0);
-  const [knownMaxPage, setKnownMaxPage] = useState<number>(1);
+  const [limit] = useState<number>(30);
+  const [totalPages, setTotalPages] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [jobStats, setJobStats] = useState<{ last7Days: number; last30Days: number }>({
     last7Days: 0,
@@ -185,6 +184,21 @@ const JobDatabase: React.FC = () => {
       .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
       .join('&');
 
+  const deriveTotalPages = (respData: any, rowsLength: number, page: number) => {
+    const responseTotalPages = Number(respData?.total_pages);
+    if (!Number.isNaN(responseTotalPages) && responseTotalPages > 0) {
+      return responseTotalPages;
+    }
+    const responseCount = Number(respData?.count);
+    if (!Number.isNaN(responseCount) && responseCount > 0) {
+      return Math.max(1, Math.ceil(responseCount / limit));
+    }
+    if (rowsLength < limit) {
+      return Math.max(1, page);
+    }
+    return page + 1;
+  };
+
   // Fetch saved job IDs from API
   const fetchSavedJobIds = async (): Promise<Set<string>> => {
     try {
@@ -235,7 +249,6 @@ const JobDatabase: React.FC = () => {
       });
       
       setCurrentPage(page);
-      setLastCount(rows.length || 0);
       // Update job statistics from API response
       if (resp?.data?.last_7_days !== undefined && resp?.data?.last_30_days !== undefined) {
         setJobStats({
@@ -243,13 +256,8 @@ const JobDatabase: React.FC = () => {
           last30Days: resp.data.last_30_days || 0,
         });
       }
-      // Grow page numbers if we got a full page
-      setKnownMaxPage(prev => {
-        if ((rows.length || 0) >= limit) {
-          return Math.max(prev, page + 1);
-        }
-        return Math.max(prev, page);
-      });
+      // Update total pages for pagination window
+      setTotalPages(deriveTotalPages(resp?.data, rows.length || 0, page));
     } finally {
       setIsLoading(false);
     }
@@ -295,13 +303,7 @@ const JobDatabase: React.FC = () => {
       });
       
       setCurrentPage(page);
-      setLastCount(mappedJobs.length || 0);
-      setKnownMaxPage(prev => {
-        if ((mappedJobs.length || 0) >= limit) {
-          return Math.max(prev, page + 1);
-        }
-        return Math.max(prev, page);
-      });
+      setTotalPages(deriveTotalPages(resp?.data, mappedJobs.length || 0, page));
     } finally {
       setIsLoading(false);
     }
@@ -372,13 +374,23 @@ const JobDatabase: React.FC = () => {
     setSortOrder(prev => prev === 'latest' ? 'oldest' : 'latest');
     // Reset to page 1 when sort changes
     setCurrentPage(1);
-    setKnownMaxPage(1);
+    setTotalPages(1);
   };
 
   // Display jobs as received from API (already sorted)
   const displayedJobs = useMemo(() => {
     return [...jobs];
   }, [jobs]);
+
+  const pageNumbers = useMemo(() => {
+    const windowSize = 5;
+    const total = Math.max(totalPages, 1);
+    const safeCurrentPage = Math.min(Math.max(currentPage, 1), total);
+    const currentBlock = Math.floor((safeCurrentPage - 1) / windowSize);
+    const start = currentBlock * windowSize + 1;
+    const end = Math.min(total, start + windowSize - 1);
+    return Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
+  }, [currentPage, totalPages]);
 
   const handleDatasetChange = (type: 'all' | 'hidden' | 'junior') => {
     // Immediately update dataset type for instant UI feedback
@@ -408,14 +420,13 @@ const JobDatabase: React.FC = () => {
     });
     
     setCurrentPage(1);
-    setLastCount(rows.length || 0);
-    setKnownMaxPage(rows.length >= limit ? 2 : 1);
+    setTotalPages(Math.max(1, Math.ceil((rows.length || 0) / limit) || 1));
   };
 
   // Auto-fetch when filters, dataset, or sort order change (page resets to 1)
   useEffect(() => {
     // Refetch page 1 on filter, dataset, or sort order change
-    setKnownMaxPage(1);
+    setTotalPages(1);
     if (activeTab === 'tracker') {
       fetchSavedPage(1).catch(console.error);
     } else {
@@ -433,7 +444,7 @@ const JobDatabase: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'database') {
       setCurrentDataset('all');
-      setKnownMaxPage(1);
+      setTotalPages(1);
       fetchPage('all', 1).catch(console.error);
     }
   }, [activeTab]);
@@ -443,7 +454,7 @@ const JobDatabase: React.FC = () => {
       <div className="min-h-screen bg-gray-50">
         {/* Header Section */}
         <div className="bg-datacareer-darkBlue text-white">
-          <div className="container mx-auto px-4 py-8">
+          <div className="mx-auto px-4 py-8">
             <div className="flex flex-col gap-6">
               <div className="flex-1">
                 <h1 className="text-2xl lg:text-3xl font-bold mb-4">
@@ -522,7 +533,7 @@ const JobDatabase: React.FC = () => {
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-6">
+        <div className="mx-auto px-4 py-6">
           <div className="grid grid-cols-1">
             {/* Main Content */}
             <div className="lg:col-span-3">
@@ -575,9 +586,9 @@ const JobDatabase: React.FC = () => {
                 >
                   Prev
                 </button>
-                {/* Numbered pages (growing window) */}
+                {/* Numbered pages (5-per-block window) */}
                 <div className="flex items-center gap-2">
-                  {Array.from({ length: knownMaxPage }, (_, i) => i + 1).map((pageNum) => (
+                  {pageNumbers.map((pageNum) => (
                     <button
                       key={pageNum}
                       className={`min-w-[28px] h-7 px-2 text-sm rounded border ${
@@ -594,7 +605,7 @@ const JobDatabase: React.FC = () => {
                 </div>
                 <button
                   className="px-3 py-1 text-sm rounded border hover:bg-gray-50 disabled:opacity-50"
-                  disabled={lastCount < limit || isLoading}
+                  disabled={currentPage >= totalPages || isLoading}
                   onClick={() => (activeTab === 'tracker' ? fetchSavedPage(currentPage + 1) : fetchPage(currentDataset, currentPage + 1))}
                 >
                   Next

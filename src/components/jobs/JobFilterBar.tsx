@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { apiInstance } from '@/api/axiosApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -57,6 +57,10 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
     locationType: false,
   });
 
+  const dropdownContentStyle: React.CSSProperties = {
+    width: 'var(--radix-popover-trigger-width)',
+  };
+
   // Helper function to get full state name
   const getStateFullName = (stateCode: string): string => {
     const stateMap: { [key: string]: string } = {
@@ -95,6 +99,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
     });
   };
 
+  const today = new Date(); // Current date to block future dates
   // Apply pending filters (triggers search)
   const handleApplyFilters = () => {
     onFiltersChange(pendingFilters);
@@ -102,10 +107,10 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
 
   const handleMultiSelectChange = (key: 'roleCategory' | 'locationState' | 'experienceLevel' | 'locationType', value: string, checked: boolean) => {
     const currentValues = pendingFilters[key] || [];
-    const newValues = checked 
+    const newValues = checked
       ? [...currentValues, value]
       : currentValues.filter(v => v !== value);
-    
+
     handlePendingFilterChange(key, newValues);
   };
 
@@ -201,8 +206,8 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
     };
     const qp: Record<string, string> = {};
 
-    // Defaults (align with pagination: 10 per page)
-    qp.limit = '10';
+    // Defaults (align with pagination: 30 per page)
+    qp.limit = '30';
     qp.page = '1';
     qp.search = 'null';
     // Default sort to desc (latest first) for downloads
@@ -211,7 +216,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
     if (currentFilters.postedDate) {
       try {
         qp.posted_date = format(currentFilters.postedDate, 'yyyy-MM-dd');
-      } catch {}
+      } catch { }
     }
     const roleJoined = joinOrUndefined(currentFilters.roleCategory, v => toTitleCase(v.replace('-', ' ')) as string);
     if (roleJoined) qp.role_cat = roleJoined;
@@ -238,42 +243,105 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
       .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
       .join('&');
 
+  const DOWNLOAD_PAGE_SIZE = 1000;
+
+  const formatHeaderLabel = (header: string) => {
+    return header
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, char => char.toUpperCase());
+  };
+
+  const deriveTotalPages = (respData: any, rowsLength: number, limitValue: number, page: number) => {
+    const responseTotalPages = Number(respData?.total_pages);
+    if (!Number.isNaN(responseTotalPages) && responseTotalPages > 0) {
+      return responseTotalPages;
+    }
+    const responseCount = Number(respData?.count);
+    if (!Number.isNaN(responseCount) && responseCount > 0) {
+      return Math.max(1, Math.ceil(responseCount / limitValue));
+    }
+    if (rowsLength < limitValue) {
+      return Math.max(1, page);
+    }
+    return page + 1;
+  };
+
+  // const jsonToCsv = (rows: any[]) => {
+  //   if (!rows || rows.length === 0) return '';
+  //   const headers = [
+  //     'posted_date', 'job_title', 'company_name', 'city', 'state', 'location', 'top_tech_skills', 'function', 'industry', 'role_cat', 'exp_level', 'sec_clearance', 'pr_citizenship_req', 'url', 'location_type'
+  //   ];
+  //   const escape = (val: any) => {
+  //     if (val === undefined || val === null) return '';
+  //     const str = String(val).replace(/\r?\n|\r/g, ' ');
+  //     if (str.includes(',') || str.includes('"')) {
+  //       return '"' + str.replace(/"/g, '""') + '"';
+  //     }
+  //     return str;
+  //   };
+  //   const lines = [headers.map(formatHeaderLabel).join(',')];
+  //   for (const r of rows) {
+  //     const posted = r.posted_date && typeof r.posted_date === 'object' ? r.posted_date.value : r.posted_date;
+  //     const locationDisplay = r.location || [r.city, r.state].filter(Boolean).join(', ');
+  //     const line = headers.map(fieldName => {
+  //       switch (fieldName) {
+  //         case 'posted_date':
+  //           return escape(posted);
+  //         case 'location':
+  //           return escape(locationDisplay);
+  //         default:
+  //           return escape(r[fieldName]);
+  //       }
+  //     }).join(',');
+  //     lines.push(line);
+  //   }
+  //   return lines.join('\n');
+  // };
+
+
   const jsonToCsv = (rows: any[]) => {
     if (!rows || rows.length === 0) return '';
+
+    // Updated headers without 'location' field
     const headers = [
-      'posted_date','job_title','company_name','city','state','location','top_tech_skills','function','industry','role_cat','exp_level','sec_clearance','pr_citizenship_req','url','location_type'
+      'posted_date', 'job_title', 'company_name', 'city', 'state', 'top_tech_skills', 'function', 'industry', 'role_cat', 'exp_level', 'sec_clearance', 'pr_citizenship_req', 'url', 'location_type'
     ];
+
     const escape = (val: any) => {
       if (val === undefined || val === null) return '';
-      const str = String(val).replace(/\r?\n|\r/g, ' ');
+      const str = String(val).replace(/\r?\n|\r/g, ' '); // replace newlines with space
       if (str.includes(',') || str.includes('"')) {
-        return '"' + str.replace(/"/g, '""') + '"';
+        return '"' + str.replace(/"/g, '""') + '"'; // escape quotes by doubling them
       }
       return str;
     };
-    const lines = [headers.join(',')];
+
+    const formatDate = (date: any) => {
+      if (!date) return ''; // return empty string if no date
+      // If it's a Date object, format it as 'yyyy-MM-dd'
+      const d = new Date(date);
+      return d.toISOString().split('T')[0]; // return just the date part (yyyy-MM-dd)
+    };
+
+    const lines = [headers.map(formatHeaderLabel).join(',')]; // Add header row
+
     for (const r of rows) {
-      const posted = r.posted_date && typeof r.posted_date === 'object' ? r.posted_date.value : r.posted_date;
-      const line = [
-        posted,
-        r.job_title,
-        r.company_name,
-        r.city,
-        r.state,
-        r.location,
-        r.top_tech_skills,
-        r.function,
-        r.industry,
-        r.role_cat,
-        r.exp_level,
-        r.sec_clearance,
-        r.pr_citizenship_req,
-        r.url,
-        r.location_type,
-      ].map(escape).join(',');
-      lines.push(line);
+      // Get the posted_date and format it to 'yyyy-MM-dd' (remove time part)
+      const posted = r.posted_date && typeof r.posted_date === 'object' ? formatDate(r.posted_date.value) : formatDate(r.posted_date);
+
+      const line = headers.map(fieldName => {
+        switch (fieldName) {
+          case 'posted_date':
+            return escape(posted); // Format posted date without time
+          default:
+            return escape(r[fieldName]); // Handle other fields
+        }
+      }).join(',');
+
+      lines.push(line); // Add the data row to lines
     }
-    return lines.join('\n');
+
+    return lines.join('\n'); // Join all lines with newline character
   };
 
   const triggerDownload = (csv: string, filename: string) => {
@@ -297,6 +365,34 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
     const resp = await apiInstance.get(url);
     const rows = Array.isArray(resp?.data?.data) ? resp.data.data : [];
     return rows;
+  };
+
+  const fetchAllRowsForDownload = async (endpoint: string): Promise<any[]> => {
+    const qp = buildQueryParams(filters);
+    qp.limit = String(DOWNLOAD_PAGE_SIZE);
+    let page = 1;
+    let totalPagesToFetch = 1;
+    const allRows: any[] = [];
+
+    while (page <= totalPagesToFetch) {
+      qp.page = String(page);
+      const qs = toQueryString(qp);
+      const url = `/api/jobs/${endpoint}?${qs}`;
+      const resp = await apiInstance.get(url);
+      const rows = Array.isArray(resp?.data?.data) ? resp.data.data : [];
+      allRows.push(...rows);
+
+      const nextTotalPages = deriveTotalPages(resp?.data, rows.length || 0, DOWNLOAD_PAGE_SIZE, page);
+      totalPagesToFetch = Math.max(totalPagesToFetch, nextTotalPages);
+
+      if (rows.length < DOWNLOAD_PAGE_SIZE && page >= nextTotalPages) {
+        break;
+      }
+
+      page += 1;
+    }
+
+    return allRows;
   };
 
   const handleDownloadAll = async () => {
@@ -336,7 +432,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
     try {
       const dataset = currentDataset || 'all';
       const endpoint = dataset === 'all' ? 'getAllJobs' : dataset === 'hidden' ? 'hiddenJobs' : 'juniorJobs';
-      const rows = await fetchRows(endpoint);
+      const rows = await fetchAllRowsForDownload(endpoint);
       const filename = dataset === 'all' ? 'all_jobs.csv' : dataset === 'hidden' ? 'hidden_jobs.csv' : 'junior_jobs.csv';
       const csv = jsonToCsv(rows);
       triggerDownload(csv, filename);
@@ -350,7 +446,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
       {/* Filter Row 1 - Dropdowns */}
       <div className="p-3 sm:p-4 border-b">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
-          <div>
+          {/* <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Posted Date
             </label>
@@ -373,8 +469,32 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                 />
               </PopoverContent>
             </Popover>
+          </div> */}
+          <div>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+              Posted Date
+            </label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {pendingFilters.postedDate ? format(pendingFilters.postedDate, "dd-MM-yyyy") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={pendingFilters.postedDate}
+                  onSelect={(date) => handlePendingFilterChange('postedDate', date)}
+                  initialFocus
+                  disabled={(date) => date > today} // Disable future dates
+                />
+              </PopoverContent>
+            </Popover>
           </div>
-
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Role Category
@@ -386,9 +506,9 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                   className="w-full justify-between text-left font-normal"
                 >
                   <span>
-                    {pendingFilters.roleCategory.length === 0 
-                      ? "Select roles" 
-                      : pendingFilters.roleCategory.length === 1 
+                    {pendingFilters.roleCategory.length === 0
+                      ? "All roles"
+                      : pendingFilters.roleCategory.length === 1
                         ? pendingFilters.roleCategory[0].replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
                         : `${pendingFilters.roleCategory.length} roles selected`
                     }
@@ -396,7 +516,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                   <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openPopovers.roleCategory ? 'rotate-180' : ''}`} />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-3">
+              <PopoverContent className="p-3" style={dropdownContentStyle}>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -434,9 +554,9 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                   className="w-full justify-between text-left font-normal"
                 >
                   <span>
-                    {pendingFilters.locationState.length === 0 
-                      ? "Select locations" 
-                      : pendingFilters.locationState.length === 1 
+                    {pendingFilters.locationState.length === 0
+                      ? "All locations"
+                      : pendingFilters.locationState.length === 1
                         ? getStateFullName(pendingFilters.locationState[0])
                         : `${pendingFilters.locationState.length} locations selected`
                     }
@@ -444,7 +564,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                   <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openPopovers.locationState ? 'rotate-180' : ''}`} />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-3">
+              <PopoverContent className="p-3" style={dropdownContentStyle}>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -542,9 +662,9 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                   className="w-full justify-between text-left font-normal"
                 >
                   <span>
-                    {pendingFilters.experienceLevel.length === 0 
-                      ? "Select experience levels" 
-                      : pendingFilters.experienceLevel.length === 1 
+                    {pendingFilters.experienceLevel.length === 0
+                      ? "All experience levels"
+                      : pendingFilters.experienceLevel.length === 1
                         ? pendingFilters.experienceLevel[0].replace(/\b\w/g, l => l.toUpperCase()).replace('-', ' ')
                         : `${pendingFilters.experienceLevel.length} levels selected`
                     }
@@ -552,7 +672,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                   <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openPopovers.experienceLevel ? 'rotate-180' : ''}`} />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-3">
+              <PopoverContent className="p-3" style={dropdownContentStyle}>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -610,9 +730,9 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                   className="w-full justify-between text-left font-normal"
                 >
                   <span>
-                    {pendingFilters.locationType.length === 0 
-                      ? "Select location types" 
-                      : pendingFilters.locationType.length === 1 
+                    {pendingFilters.locationType.length === 0
+                      ? "All location types"
+                      : pendingFilters.locationType.length === 1
                         ? pendingFilters.locationType[0].replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
                         : `${pendingFilters.locationType.length} types selected`
                     }
@@ -620,7 +740,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                   <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openPopovers.locationType ? 'rotate-180' : ''}`} />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-3">
+              <PopoverContent className="p-3" style={dropdownContentStyle}>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -711,49 +831,46 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
             <div className="flex flex-col sm:flex-row gap-2 flex-1">
               <Button
                 variant="outline"
-                className={`flex items-center gap-2 text-xs sm:text-sm ${
-                  currentDataset === 'all'
-                    ? 'bg-datacareer-darkBlue text-white border-datacareer-darkBlue hover:opacity-90'
-                    : 'text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
+                className={`flex items-center gap-2 text-xs sm:text-sm ${currentDataset === 'all'
+                  ? 'bg-datacareer-darkBlue text-white border-datacareer-darkBlue hover:opacity-90'
+                  : 'text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
                 onClick={handleDownloadAll}
               >
-                <span className="hidden sm:inline">All Jobs (CSV)</span>
+                <span className="hidden sm:inline">All Jobs</span>
                 <span className="sm:hidden">All Jobs</span>
               </Button>
               <Button
                 variant="outline"
-                className={`flex items-center gap-2 text-xs sm:text-sm ${
-                  currentDataset === 'hidden'
-                    ? 'bg-datacareer-darkBlue text-white border-datacareer-darkBlue hover:opacity-90'
-                    : 'text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
+                className={`flex items-center gap-2 text-xs sm:text-sm ${currentDataset === 'hidden'
+                  ? 'bg-datacareer-darkBlue text-white border-datacareer-darkBlue hover:opacity-90'
+                  : 'text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
                 onClick={handleDownloadHidden}
               >
-                <span className="hidden sm:inline">Hidden data jobs (CSV)</span>
+                <span className="hidden sm:inline">Hidden data jobs</span>
                 <span className="sm:hidden">Hidden Jobs</span>
-              </Button> 
+              </Button>
               <Button
                 variant="outline"
-                className={`flex items-center gap-2 text-xs sm:text-sm ${
-                  currentDataset === 'junior'
-                    ? 'bg-datacareer-darkBlue text-white border-datacareer-darkBlue hover:opacity-90'
-                    : 'text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
+                className={`flex items-center gap-2 text-xs sm:text-sm ${currentDataset === 'junior'
+                  ? 'bg-datacareer-darkBlue text-white border-datacareer-darkBlue hover:opacity-90'
+                  : 'text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
                 onClick={handleDownloadJunior}
               >
-                <span className="hidden sm:inline">Junior data jobs (CSV)</span>
+                <span className="hidden sm:inline">Junior data jobs</span>
                 <span className="sm:hidden">Junior Jobs</span>
-              </Button> 
+              </Button>
             </div>
-            
+
             {/* Saved Filters Button */}
             <Button
               variant="outline"
-              className="flex items-center gap-2 text-gray-700 border-gray-300 hover:bg-gray-50 whitespace-nowrap text-xs sm:text-sm"
+              className="flex items-center text-white gap-2 bg-datacareer-blue hover:bg-datacareer-darkBlue whitespace-nowrap text-xs sm:text-sm"
               onClick={handleDownloadCurrent}
             >
-              Download 
+              Download (CSV)
             </Button>
           </div>
         </div>
