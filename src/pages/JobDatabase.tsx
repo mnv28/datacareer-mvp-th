@@ -17,6 +17,7 @@ interface JobFilters {
   function: string;
   techSkills: string;
   industry: string;
+  status?: string;
 }
 
 const JobDatabase: React.FC = () => {
@@ -29,6 +30,7 @@ const JobDatabase: React.FC = () => {
     function: '',
     techSkills: '',
     industry: '',
+    status: '',
   });
 
   const [activeTab, setActiveTab] = useState<'database' | 'tracker'>('database');
@@ -179,6 +181,7 @@ const JobDatabase: React.FC = () => {
     if (filters.function) qp.func = filters.function;
     if (filters.techSkills) qp.top_tech_skills = filters.techSkills;
     if (filters.industry) qp.industry = filters.industry;
+    if ((filters as any).status) qp.status = (filters as any).status;
     return qp;
   };
 
@@ -327,6 +330,7 @@ const JobDatabase: React.FC = () => {
       function: '',
       techSkills: '',
       industry: '',
+      status: '',
     });
   };
 
@@ -549,6 +553,7 @@ const JobDatabase: React.FC = () => {
                 onApplyDataset={handleApplyDataset}
                 onDatasetChange={handleDatasetChange}
                 currentDataset={currentDataset}
+                activeTab={activeTab}
               />
 
               {/* Job Statistics */}

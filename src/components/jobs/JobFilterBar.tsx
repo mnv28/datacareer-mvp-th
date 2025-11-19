@@ -18,6 +18,7 @@ interface JobFilters {
   function: string;
   techSkills: string;
   industry: string;
+  status?: string;
 }
 
 interface JobFilterBarProps {
@@ -27,6 +28,7 @@ interface JobFilterBarProps {
   onApplyDataset?: (type: 'all' | 'hidden' | 'junior', rows: any[]) => void;
   onDatasetChange?: (type: 'all' | 'hidden' | 'junior') => void;
   currentDataset?: 'all' | 'hidden' | 'junior';
+  activeTab?: 'database' | 'tracker';
 }
 
 const JobFilterBar: React.FC<JobFilterBarProps> = ({
@@ -35,7 +37,8 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
   onClearFilters,
   onApplyDataset,
   onDatasetChange,
-  currentDataset
+  currentDataset,
+  activeTab = 'database'
 }) => {
   // Local state for pending filters (what user selects but hasn't applied yet)
   const [pendingFilters, setPendingFilters] = React.useState<JobFilters>(filters);
@@ -87,6 +90,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
       function: 'Function',
       techSkills: 'Tech Skills',
       industry: 'Industry',
+      status: 'Status',
     };
     return map[key] || String(key);
   };
@@ -125,6 +129,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
       function: '',
       techSkills: '',
       industry: '',
+      status: '',
     };
     setPendingFilters(clearedFilters);
     onClearFilters();
@@ -158,6 +163,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
     if (pendingFilters.function !== filters.function) return true;
     if (pendingFilters.techSkills !== filters.techSkills) return true;
     if (pendingFilters.industry !== filters.industry) return true;
+    if ((pendingFilters as any).status !== (filters as any).status) return true;
 
     return false;
   }, [pendingFilters, filters]);
@@ -495,6 +501,35 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
               </PopoverContent>
             </Popover>
           </div>
+          {/* If we're in the tracker (Saved Jobs) view, only show Posted Date + Status */}
+          {activeTab === 'tracker' ? (
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                Status
+              </label>
+              <Select
+                value={(pendingFilters as any).status ? (pendingFilters as any).status : '_all'}
+                onValueChange={(val) => {
+                  const out = val === '_all' ? '' : val;
+                  handlePendingFilterChange('status' as keyof JobFilters, out);
+                }}
+              >
+                <SelectTrigger className="h-9 text-xs w-full">
+                  <SelectValue placeholder="All statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">All statuses</SelectItem>
+                  <SelectItem value="Yet to Apply">Yet to Apply</SelectItem>
+                  <SelectItem value="First Contact">First Contact</SelectItem>
+                  <SelectItem value="Applied">Applied</SelectItem>
+                  <SelectItem value="Interview">Interview</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <>
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Role Category
@@ -542,7 +577,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
               </PopoverContent>
             </Popover>
           </div>
-
+          
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Location (State)
@@ -766,52 +801,55 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
               </PopoverContent>
             </Popover>
           </div>
+        </>
+          )}
         </div>
       </div>
 
       {/* Filter Row 2 - Text Inputs and Apply Button */}
       <div className="p-3 sm:p-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-         
-                   <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-              Tech Skills
-            </label>
-            <Input
-              type="text"
-              placeholder="Type a skill e.g. SQL, Tableau"
-              value={pendingFilters.techSkills}
-              onChange={(e) => handlePendingFilterChange('techSkills', e.target.value)}
-              className="w-full"
-            />
-          </div>
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-              Function
-            </label>
-            <Input
-              type="text"
-              placeholder="Type a function e.g. Marketing"
-              value={pendingFilters.function}
-              onChange={(e) => handlePendingFilterChange('function', e.target.value)}
-              className="w-full"
-            />
-          </div>
+          {activeTab !== 'tracker' && (
+            <>
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                  Tech Skills
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Type a skill e.g. SQL, Tableau"
+                  value={pendingFilters.techSkills}
+                  onChange={(e) => handlePendingFilterChange('techSkills', e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                  Function
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Type a function e.g. Marketing"
+                  value={pendingFilters.function}
+                  onChange={(e) => handlePendingFilterChange('function', e.target.value)}
+                  className="w-full"
+                />
+              </div>
 
-
-
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-              Industry
-            </label>
-            <Input
-              type="text"
-              placeholder="Type a industry e.g. Banking"
-              value={pendingFilters.industry}
-              onChange={(e) => handlePendingFilterChange('industry', e.target.value)}
-              className="w-full"
-            />
-          </div>
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                  Industry
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Type a industry e.g. Banking"
+                  value={pendingFilters.industry}
+                  onChange={(e) => handlePendingFilterChange('industry', e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </>
+          )}
         </div>
 
         {/* Apply Button */}
@@ -828,43 +866,45 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
 
         {/* Download and Saved Filters Buttons */}
         <div className="mt-4 pt-4 border-t">
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Download Buttons */}
-            <div className="flex flex-col sm:flex-row gap-2 flex-1">
-              <Button
-                variant="outline"
-                className={`flex items-center gap-2 text-xs sm:text-sm ${currentDataset === 'all'
-                  ? 'bg-datacareer-darkBlue text-white border-datacareer-darkBlue hover:opacity-90'
-                  : 'text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
-                onClick={handleDownloadAll}
-              >
-                <span className="hidden sm:inline">All Jobs</span>
-                <span className="sm:hidden">All Jobs</span>
-              </Button>
-              <Button
-                variant="outline"
-                className={`flex items-center gap-2 text-xs sm:text-sm ${currentDataset === 'hidden'
-                  ? 'bg-datacareer-darkBlue text-white border-datacareer-darkBlue hover:opacity-90'
-                  : 'text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
-                onClick={handleDownloadHidden}
-              >
-                <span className="hidden sm:inline">Hidden data jobs</span>
-                <span className="sm:hidden">Hidden Jobs</span>
-              </Button>
-              <Button
-                variant="outline"
-                className={`flex items-center gap-2 text-xs sm:text-sm ${currentDataset === 'junior'
-                  ? 'bg-datacareer-darkBlue text-white border-datacareer-darkBlue hover:opacity-90'
-                  : 'text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
-                onClick={handleDownloadJunior}
-              >
-                <span className="hidden sm:inline">Junior data jobs</span>
-                <span className="sm:hidden">Junior Jobs</span>
-              </Button>
-            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+            {/* Download Buttons - only show dataset choices in Database view */}
+            {activeTab !== 'tracker' && (
+              <div className="flex flex-col sm:flex-row gap-2 flex-1">
+                <Button
+                  variant="outline"
+                  className={`flex items-center gap-2 text-xs sm:text-sm ${currentDataset === 'all'
+                    ? 'bg-datacareer-darkBlue text-white border-datacareer-darkBlue hover:opacity-90'
+                    : 'text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  onClick={handleDownloadAll}
+                >
+                  <span className="hidden sm:inline">All Jobs</span>
+                  <span className="sm:hidden">All Jobs</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className={`flex items-center gap-2 text-xs sm:text-sm ${currentDataset === 'hidden'
+                    ? 'bg-datacareer-darkBlue text-white border-datacareer-darkBlue hover:opacity-90'
+                    : 'text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  onClick={handleDownloadHidden}
+                >
+                  <span className="hidden sm:inline">Hidden data jobs</span>
+                  <span className="sm:hidden">Hidden Jobs</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className={`flex items-center gap-2 text-xs sm:text-sm ${currentDataset === 'junior'
+                    ? 'bg-datacareer-darkBlue text-white border-datacareer-darkBlue hover:opacity-90'
+                    : 'text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  onClick={handleDownloadJunior}
+                >
+                  <span className="hidden sm:inline">Junior data jobs</span>
+                  <span className="sm:hidden">Junior Jobs</span>
+                </Button>
+              </div>
+            )}
 
             {/* Saved Filters Button */}
             <Button
