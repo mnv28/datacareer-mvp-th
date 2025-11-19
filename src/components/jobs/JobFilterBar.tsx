@@ -772,6 +772,19 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
       {/* Filter Row 2 - Text Inputs and Apply Button */}
       <div className="p-3 sm:p-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+         
+                   <div>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+              Tech Skills
+            </label>
+            <Input
+              type="text"
+              placeholder="Type a skill e.g. SQL, Tableau"
+              value={pendingFilters.techSkills}
+              onChange={(e) => handlePendingFilterChange('techSkills', e.target.value)}
+              className="w-full"
+            />
+          </div>
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Function
@@ -785,18 +798,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
             />
           </div>
 
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-              Tech Skills
-            </label>
-            <Input
-              type="text"
-              placeholder="Type a skill e.g. SQL, Tableau"
-              value={pendingFilters.techSkills}
-              onChange={(e) => handlePendingFilterChange('techSkills', e.target.value)}
-              className="w-full"
-            />
-          </div>
+
 
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
