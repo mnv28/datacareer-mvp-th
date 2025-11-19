@@ -67,7 +67,7 @@ const JobDatabase: React.FC = () => {
           location: r?.location || [r?.city, r?.state].filter(Boolean).join(', '),
         },
         topTechSkill: r?.top_tech_skills || '',
-        function: r?.function || '',
+        func: r?.function || '',
         industry: r?.industry || '',
         otherDetails: details,
       };
@@ -109,7 +109,7 @@ const JobDatabase: React.FC = () => {
           location: jobData?.location || [jobData?.city, jobData?.state].filter(Boolean).join(', '),
         },
         topTechSkill: jobData?.top_tech_skills || '',
-        function: jobData?.function || '',
+        func: jobData?.function || '',
         industry: jobData?.industry || '',
         otherDetails: details,
         status: r?.status, // status comes from the saved job record, not the job object
@@ -172,7 +172,7 @@ const JobDatabase: React.FC = () => {
     if (expJoined) qp.exp_level = expJoined;
     const locTypeJoined = joinOrUndefined(filters.locationType, v => mapLocationType(v) as string);
     if (locTypeJoined) qp.location_type = locTypeJoined;
-    if (filters.function) qp.function = filters.function;
+    if (filters.function) qp.func = filters.function;
     if (filters.techSkills) qp.top_tech_skills = filters.techSkills;
     if (filters.industry) qp.industry = filters.industry;
     return qp;

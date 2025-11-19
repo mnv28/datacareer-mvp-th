@@ -230,7 +230,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
     const locTypeJoined = joinOrUndefined(currentFilters.locationType, v => mapLocationType(v) as string);
     if (locTypeJoined) qp.location_type = locTypeJoined;
 
-    if (currentFilters.function) qp.function = currentFilters.function;
+    if (currentFilters.function) qp.func = currentFilters.function;
     if (currentFilters.techSkills) qp.top_tech_skills = currentFilters.techSkills;
     if (currentFilters.industry) qp.industry = currentFilters.industry;
 
