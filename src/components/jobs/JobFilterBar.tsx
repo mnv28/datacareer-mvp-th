@@ -527,8 +527,8 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                   handlePendingFilterChange('status' as keyof JobFilters, out);
                 }}
               >
-                <SelectTrigger className="h-9 text-xs w-full">
-                  <SelectValue placeholder="All statuses" />
+                <SelectTrigger className="h-9 text-xs sm:text-sm font-medium text-gray-700 w-full">
+                  <SelectValue placeholder="All status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="_all">All statuses</SelectItem>
