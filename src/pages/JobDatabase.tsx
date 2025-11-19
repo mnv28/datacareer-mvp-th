@@ -67,6 +67,8 @@ const JobDatabase: React.FC = () => {
           location: r?.location || [r?.city, r?.state].filter(Boolean).join(', '),
         },
         topTechSkill: r?.top_tech_skills || '',
+        // map API 'function' field to an object property named 'function'
+        function: r?.function || '',
         func: r?.function || '',
         industry: r?.industry || '',
         otherDetails: details,
@@ -109,6 +111,8 @@ const JobDatabase: React.FC = () => {
           location: jobData?.location || [jobData?.city, jobData?.state].filter(Boolean).join(', '),
         },
         topTechSkill: jobData?.top_tech_skills || '',
+        // ensure both keys exist so components reading either will work
+        function: jobData?.function || '',
         func: jobData?.function || '',
         industry: jobData?.industry || '',
         otherDetails: details,
