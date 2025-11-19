@@ -436,6 +436,19 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
 
   const handleDownloadCurrent = async () => {
     try {
+      // If we're on the Saved Jobs (tracker) tab, download saved jobs only
+      if (activeTab === 'tracker') {
+        const rows = await fetchAllRowsForDownload('getSavedJobs');
+        // Saved jobs endpoint returns saved-job records which contain the actual job
+        // under `job` or `dataValues`. Map to the inner job object so CSV builder
+        // can read expected fields like `posted_date`, `job_title`, etc.
+        const jobRows = rows.map((r: any) => r?.job ?? r?.dataValues ?? r);
+        const filename = 'saved_jobs.csv';
+        const csv = jsonToCsv(jobRows);
+        triggerDownload(csv, filename);
+        return;
+      }
+
       const dataset = currentDataset || 'all';
       const endpoint = dataset === 'all' ? 'getAllJobs' : dataset === 'hidden' ? 'hiddenJobs' : 'juniorJobs';
       const rows = await fetchAllRowsForDownload(endpoint);
