@@ -909,7 +909,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
             {/* Saved Filters Button */}
             <Button
               variant="outline"
-              className="flex items-center text-white gap-2 bg-datacareer-blue hover:bg-datacareer-darkBlue whitespace-nowrap text-xs sm:text-sm"
+              className="flex items-center text-white gap-2 bg-datacareer-blue hover:bg-datacareer-darkBlue whitespace-nowrap text-xs sm:text-sm hover:text-white"
               onClick={handleDownloadCurrent}
             >
               Download (CSV)
