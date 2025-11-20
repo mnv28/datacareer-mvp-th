@@ -8,7 +8,8 @@ import saveIcon from '../../assets/save.svg';
 import savedIcon from '../../assets/saved.svg';
 import shareIcon from '../../assets/share.svg';
 import industryIcon from '../../assets/industry.svg';
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
+
 interface Job {
   id: number; // local row id
   apiId?: string; // backend job id
@@ -194,19 +195,27 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
   const getDetailBadgeColor = (detail: string) => {
     const lowerDetail = detail.toLowerCase();
     if (lowerDetail.includes('data engineer') || lowerDetail.includes('data analyst')) {
-      return 'bg-green-100 text-green-800 border-green-200';
+      // return 'bg-green-100 text-green-800 border-green-200';
+      return 'bg-[#d4edbc] text-[#1e300d] border-[#d4edbc]';
     }
     if (lowerDetail.includes('associate')) {
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-[#bfe1f6] text-[#082436] border-[#bfe1f6]';
+      // return 'bg-blue-100 text-blue-800 border-blue-200';
     }
     if (lowerDetail.includes('senior')) {
-      return 'bg-orange-100 text-orange-800 border-orange-200';
+      return 'bg-[#ffc8aa] text-[#662400] border-[#ffc8aa]';
+
+      // return 'bg-orange-100 text-orange-800 border-orange-200';
     }
     if (lowerDetail.includes('clearance')) {
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      return 'bg-[#ffe5a0] text-[#3d2d00] border-[#ffe5a0]';
+
+      // return 'bg-yellow-100 text-yellow-800 border-yellow-200';
     }
     if (lowerDetail.includes('remote')) {
-      return 'bg-purple-100 text-purple-800 border-purple-200';
+      return 'bg-[#e6cff2] text-[#240d30] border-[#e6cff2]';
+
+      // return 'bg-purple-100 text-purple-800 border-purple-200';
     }
     if (lowerDetail.includes('full-time')) {
       return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -263,8 +272,8 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
             )}
             {confirmModal.mode === 'save' && confirmModal.saveResponse && (
               <p className={`text-sm mb-4 ${confirmModal.saveResponse.isSaved
-                  ? 'text-green-600'
-                  : 'text-gray-600'
+                ? 'text-green-600'
+                : 'text-gray-600'
                 }`}>
                 {confirmModal.saveResponse.message}
               </p>
@@ -301,11 +310,11 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
       <div className="bg-gray-50 border-b px-6 py-4">
         <div className="hidden lg:grid grid-cols-12 gap-4 items-center text-sm font-medium text-gray-700">
           <div className="col-span-1">Posted date</div>
-          <div className="col-span-3">Company</div>
+          <div className="col-span-2">Company</div>
           <div className="col-span-2">Top tech skill</div>
-          <div className="col-span-1">Function</div>
-          <div className="col-span-1">Industry</div>
-          <div className={activeTab === 'tracker' ? 'col-span-2' : 'col-span-3'}>Other details</div>
+          <div className="col-span-2">Function</div>
+          <div className="col-span-2">Industry</div>
+          <div className={activeTab === 'tracker' ? 'col-span-2' : 'col-span-2'}>Other details</div>
           {activeTab === 'tracker' && (
             <>
               <div className="col-span-1">Status</div>
@@ -331,40 +340,46 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
               {/* Posted Date */}
               <div className="col-span-1">
                 <div className="text-sm text-gray-600">
-                  {/* {job.postedDate} */}
-                  {format(job.postedDate, "dd-MM-yyyy")}
 
+                  {format(job.postedDate, "dd/MM/yyyy")}
+                  {/* Time ago */}
+                  <div className="text-gray-400">
+                    ({formatDistanceToNow(new Date(job.postedDate), { addSuffix: true })})
+                  </div>
                 </div>
               </div>
 
               {/* Company */}
-              <div className="col-span-3">
+              <div className="col-span-2">
                 <div className="space-y-1">
                   <div className="font-medium text-gray-900">
                     {job.company.title}
                   </div>
-                  <div className="text-sm text-gray-600 flex items-center gap-1">
-                    <img src={industryIcon} alt="Industry" className="h-4 w-4" />
-                    {job.company.name}
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-gray-500">
-                    <MapPin className="h-3 w-3" />
-                    {(() => {
-                      const locStr = job?.company?.location;
+                  <div className="flex flex-col gap-1 text-sm text-gray-600">
+                    {/* Company Name with Icon */}
+                    <div className="flex items-center gap-1">
+                      <img src={industryIcon} alt="Industry" className="h-4 w-4" />
+                      {job.company.name}
+                    </div>
 
-                      if (!locStr) return "N/A";
-
-                      try {
-                        // Check if it's a stringified object
-                        const parsed = JSON.parse(locStr.replace(/'/g, '"'));
-                        // If parsed has 'location' key, return it
-                        return parsed.location || locStr;
-                      } catch (err) {
-                        // If JSON.parse fails, it's a normal string
-                        return locStr;
-                      }
-                    })()}
+                    {/* Location with Icon, same font/size */}
+                    <div className="flex items-center gap-1">
+                      <MapPin className="h-4 w-4" /> {/* same size as company icon */}
+                      <span>
+                        {(() => {
+                          const locStr = job?.company?.location;
+                          if (!locStr) return "N/A";
+                          try {
+                            const parsed = JSON.parse(locStr.replace(/'/g, '"'));
+                            return parsed.location || locStr;
+                          } catch (err) {
+                            return locStr;
+                          }
+                        })()}
+                      </span>
+                    </div>
                   </div>
+
 
                 </div>
               </div>
@@ -377,21 +392,21 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
               </div>
 
               {/* Function */}
-              <div className="col-span-1">
+              <div className="col-span-2">
                 <div className="text-sm text-gray-700">
                   {job.function}
                 </div>
               </div>
 
               {/* Industry */}
-              <div className="col-span-1">
+              <div className="col-span-2">
                 <div className="text-sm text-gray-700">
                   {job.industry}
                 </div>
               </div>
 
               {/* Other Details */}
-              <div className={activeTab === 'tracker' ? 'col-span-2' : 'col-span-3'}>
+              <div className={activeTab === 'tracker' ? 'col-span-2' : 'col-span-2'}>
                 <div className="flex flex-wrap gap-1 mb-2">
                   {job.otherDetails.map((detail, index) => (
                     <Badge
@@ -459,17 +474,36 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
                   <div className="font-medium text-gray-900 mb-1">
                     {job.company.title}
                   </div>
-                  <div className="text-sm text-gray-600 mb-1">
-                    {job.company.name}
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
-                    <MapPin className="h-3 w-3" />
-                    {job.company.location}
+                  <div className="flex flex-col gap-1 text-sm text-gray-600 mb-1">
+                    <div className="flex items-center gap-1">
+                      <img src={industryIcon} alt="Industry" className="h-4 w-4" />
+                      {job.company.name}
+                    </div>
+
+                    {/* Location + Icon, same font/size */}
+                    <div className="flex items-center gap-1">
+                      <MapPin className="h-4 w-4" />
+                      <span>
+                        {(() => {
+                          const locStr = job?.company?.location;
+                          if (!locStr) return "N/A";
+                          try {
+                            const parsed = JSON.parse(locStr.replace(/'/g, '"'));
+                            return parsed.location || locStr;
+                          } catch (err) {
+                            return locStr;
+                          }
+                        })()}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <div className="text-xs text-gray-500">
-                  {/* {job.postedDate} */}
-                  {format(job.postedDate, "dd-MM-yyyy")}
+                  {format(job.postedDate, "dd/MM/yyyy")}
+                  {/* Time ago */}
+                  <span className="ml-2 text-gray-400">
+                    ({formatDistanceToNow(new Date(job.postedDate), { addSuffix: true })})
+                  </span>
                 </div>
               </div>
 

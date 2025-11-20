@@ -5,7 +5,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Database,
-  Bookmark,
   Code2,
   Crown,
   Settings,
@@ -78,7 +77,7 @@ const Sidebar: React.FC = () => {
     <div className="flex flex-col h-full bg-white border-r border-gray-200">
        {/* Logo Section */}
        <div className="p-4 border-b border-gray-200">
-         <Link to="/" className="flex items-center justify-start">
+         <Link to="/" className="flex items-center justify-center">
            {isCollapsed ? (
              <img src={favicon} alt="DCA" className="h-8 w-8 object-contain" />
            ) : (
