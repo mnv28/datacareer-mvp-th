@@ -61,7 +61,7 @@ const JobDatabase: React.FC = () => {
         id: idx + 1,
         apiId: r?.id || '',
         url: r?.url || '',
-        postedDate: postedVal,
+        postedDate: dateObj,
         postedDateValue: dateObj,
         company: {
           title: r?.job_title || '',
@@ -105,7 +105,7 @@ const JobDatabase: React.FC = () => {
         id: idx + 1,
         apiId: r?.job_id || jobData?.id || r?.id || '',
         url: jobData?.url || r?.url || '',
-        postedDate: formattedDate || postedVal,
+        postedDate: dateObj,
         postedDateValue: dateObj,
         company: {
           title: jobData?.job_title || '',

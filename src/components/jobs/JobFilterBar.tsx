@@ -60,6 +60,8 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
     locationType: false,
   });
 
+  const [isDownloading, setIsDownloading] = React.useState<boolean>(false);
+
   const dropdownContentStyle: React.CSSProperties = {
     width: 'var(--radix-popover-trigger-width)',
   };
@@ -203,6 +205,26 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
       .join(' ');
   };
 
+  // Format a Date to UTC 'yyyy-MM-dd' string (server date)
+  const formatDateToYMDUTC = (date?: Date) => {
+    if (!date) return undefined;
+    try {
+      return new Date(date).toISOString().split('T')[0];
+    } catch {
+      return undefined;
+    }
+  };
+
+  // Format a Date to display as 'dd-MM-yyyy' in the user's local timezone
+  const formatDateDisplayLocal = (date?: Date) => {
+    if (!date) return '';
+    try {
+      return format(date, 'dd-MM-yyyy');
+    } catch {
+      return '';
+    }
+  };
+
   const buildQueryParams = (currentFilters: JobFilters) => {
     // Support multi-select: join with commas
     const joinOrUndefined = (arr?: string[], mapper?: (v: string) => string) => {
@@ -220,9 +242,8 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
     qp.sort = 'desc';
 
     if (currentFilters.postedDate) {
-      try {
-        qp.posted_date = format(currentFilters.postedDate, 'yyyy-MM-dd');
-      } catch { }
+      const ymd = formatDateToYMDUTC(currentFilters.postedDate);
+      if (ymd) qp.posted_date = ymd;
     }
     const roleJoined = joinOrUndefined(currentFilters.roleCategory, v => toTitleCase(v.replace('-', ' ')) as string);
     if (roleJoined) qp.role_cat = roleJoined;
@@ -435,6 +456,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
   };
 
   const handleDownloadCurrent = async () => {
+    setIsDownloading(true);
     try {
       // If we're on the Saved Jobs (tracker) tab, download saved jobs only
       if (activeTab === 'tracker') {
@@ -457,6 +479,8 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
       triggerDownload(csv, filename);
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -489,6 +513,89 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
               </PopoverContent>
             </Popover>
           </div> */}
+          {activeTab === 'tracker' ? (
+            <div className="col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-4">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                <div className="flex-1 min-w-0">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Posted Date</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {pendingFilters.postedDate ? formatDateDisplayLocal(pendingFilters.postedDate) : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={pendingFilters.postedDate}
+                        onSelect={(date) => handlePendingFilterChange('postedDate', date)}
+                        initialFocus
+                        disabled={(date) => date > today}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="w-56">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <Select
+                    value={(pendingFilters as any).status ? (pendingFilters as any).status : '_all'}
+                    onValueChange={(val) => {
+                      const out = val === '_all' ? '' : val;
+                      handlePendingFilterChange('status' as keyof JobFilters, out);
+                    }}
+                  >
+                    <SelectTrigger className="h-9 text-xs w-full">
+                      <SelectValue placeholder="All statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_all">All statuses</SelectItem>
+                      <SelectItem value="Yet to Apply">Yet to Apply</SelectItem>
+                      <SelectItem value="First Contact">First Contact</SelectItem>
+                      <SelectItem value="Applied">Applied</SelectItem>
+                      <SelectItem value="Interview">Interview</SelectItem>
+                      <SelectItem value="Rejected">Rejected</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex-shrink-0 flex items-center gap-2">
+                  <Button
+                    onClick={handleApplyFilters}
+                    disabled={!hasPendingChanges}
+                    className="bg-datacareer-darkBlue text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed h-9"
+                  >
+                    Apply Filters
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={handleDownloadCurrent}
+                    disabled={isDownloading}
+                    className="flex items-center text-white gap-2 bg-datacareer-blue hover:bg-datacareer-darkBlue whitespace-nowrap text-xs sm:text-sm hover:text-white h-9 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isDownloading ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                        Downloading...
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-2">
+                        <Download className="h-4 w-4" />
+                        Download (CSV)
+                      </span>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
           <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Posted Date
@@ -500,7 +607,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                   className="w-full justify-start text-left font-normal"
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {pendingFilters.postedDate ? format(pendingFilters.postedDate, "dd-MM-yyyy") : "Pick a date"}
+                        {pendingFilters.postedDate ? formatDateDisplayLocal(pendingFilters.postedDate) : "Pick a date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
@@ -509,312 +616,283 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                   selected={pendingFilters.postedDate}
                   onSelect={(date) => handlePendingFilterChange('postedDate', date)}
                   initialFocus
-                  disabled={(date) => date > today} // Disable future dates
+                  disabled={(date) => date > today}
                 />
               </PopoverContent>
             </Popover>
           </div>
-          {/* If we're in the tracker (Saved Jobs) view, only show Posted Date + Status */}
-          {activeTab === 'tracker' ? (
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <Select
-                value={(pendingFilters as any).status ? (pendingFilters as any).status : '_all'}
-                onValueChange={(val) => {
-                  const out = val === '_all' ? '' : val;
-                  handlePendingFilterChange('status' as keyof JobFilters, out);
-                }}
-              >
-                <SelectTrigger className="h-9 text-xs sm:text-sm font-medium text-gray-700 w-full">
-                  <SelectValue placeholder="All status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_all">All statuses</SelectItem>
-                  <SelectItem value="Yet to Apply">Yet to Apply</SelectItem>
-                  <SelectItem value="First Contact">First Contact</SelectItem>
-                  <SelectItem value="Applied">Applied</SelectItem>
-                  <SelectItem value="Interview">Interview</SelectItem>
-                  <SelectItem value="Rejected">Rejected</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            <>
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-              Role Category
-            </label>
-            <Popover open={openPopovers.roleCategory} onOpenChange={(isOpen) => togglePopover('roleCategory', isOpen)}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between text-left font-normal"
-                >
-                  <span>
-                    {pendingFilters.roleCategory.length === 0
-                      ? "All roles"
-                      : pendingFilters.roleCategory.length === 1
-                        ? pendingFilters.roleCategory[0].replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
-                        : `${pendingFilters.roleCategory.length} roles selected`
-                    }
-                  </span>
-                  <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openPopovers.roleCategory ? 'rotate-180' : ''}`} />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="p-3" style={dropdownContentStyle}>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="data-analyst"
-                      checked={pendingFilters.roleCategory.includes('data-analyst')}
-                      onCheckedChange={(checked) => handleMultiSelectChange('roleCategory', 'data-analyst', checked as boolean)}
-                    />
-                    <label htmlFor="data-analyst" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Data Analyst
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="data-engineer"
-                      checked={pendingFilters.roleCategory.includes('data-engineer')}
-                      onCheckedChange={(checked) => handleMultiSelectChange('roleCategory', 'data-engineer', checked as boolean)}
-                    />
-                    <label htmlFor="data-engineer" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Data Engineer
-                    </label>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-          
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-              Location (State)
-            </label>
-            <Popover open={openPopovers.locationState} onOpenChange={(isOpen) => togglePopover('locationState', isOpen)}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between text-left font-normal"
-                >
-                  <span>
-                    {pendingFilters.locationState.length === 0
-                      ? "All locations"
-                      : pendingFilters.locationState.length === 1
-                        ? getStateFullName(pendingFilters.locationState[0])
-                        : `${pendingFilters.locationState.length} locations selected`
-                    }
-                  </span>
-                  <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openPopovers.locationState ? 'rotate-180' : ''}`} />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="p-3" style={dropdownContentStyle}>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="nsw"
-                      checked={pendingFilters.locationState.includes('nsw')}
-                      onCheckedChange={(checked) => handleMultiSelectChange('locationState', 'nsw', checked as boolean)}
-                    />
-                    <label htmlFor="nsw" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      New South Wales
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="vic"
-                      checked={pendingFilters.locationState.includes('vic')}
-                      onCheckedChange={(checked) => handleMultiSelectChange('locationState', 'vic', checked as boolean)}
-                    />
-                    <label htmlFor="vic" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Victoria
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="qld"
-                      checked={pendingFilters.locationState.includes('qld')}
-                      onCheckedChange={(checked) => handleMultiSelectChange('locationState', 'qld', checked as boolean)}
-                    />
-                    <label htmlFor="qld" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Queensland
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="wa"
-                      checked={pendingFilters.locationState.includes('wa')}
-                      onCheckedChange={(checked) => handleMultiSelectChange('locationState', 'wa', checked as boolean)}
-                    />
-                    <label htmlFor="wa" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Western Australia
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="sa"
-                      checked={pendingFilters.locationState.includes('sa')}
-                      onCheckedChange={(checked) => handleMultiSelectChange('locationState', 'sa', checked as boolean)}
-                    />
-                    <label htmlFor="sa" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      South Australia
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="tas"
-                      checked={pendingFilters.locationState.includes('tas')}
-                      onCheckedChange={(checked) => handleMultiSelectChange('locationState', 'tas', checked as boolean)}
-                    />
-                    <label htmlFor="tas" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Tasmania
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="act"
-                      checked={pendingFilters.locationState.includes('act')}
-                      onCheckedChange={(checked) => handleMultiSelectChange('locationState', 'act', checked as boolean)}
-                    />
-                    <label htmlFor="act" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      ACT
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="nt"
-                      checked={pendingFilters.locationState.includes('nt')}
-                      onCheckedChange={(checked) => handleMultiSelectChange('locationState', 'nt', checked as boolean)}
-                    />
-                    <label htmlFor="nt" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Northern Territory
-                    </label>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                  Role Category
+                </label>
+                <Popover open={openPopovers.roleCategory} onOpenChange={(isOpen) => togglePopover('roleCategory', isOpen)}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between text-left font-normal"
+                    >
+                      <span>
+                        {pendingFilters.roleCategory.length === 0
+                          ? "All roles"
+                          : pendingFilters.roleCategory.length === 1
+                            ? pendingFilters.roleCategory[0].replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
+                            : `${pendingFilters.roleCategory.length} roles selected`
+                        }
+                      </span>
+                      <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openPopovers.roleCategory ? 'rotate-180' : ''}`} />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-3" style={dropdownContentStyle}>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="data-analyst"
+                          checked={pendingFilters.roleCategory.includes('data-analyst')}
+                          onCheckedChange={(checked) => handleMultiSelectChange('roleCategory', 'data-analyst', checked as boolean)}
+                        />
+                        <label htmlFor="data-analyst" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Data Analyst
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="data-engineer"
+                          checked={pendingFilters.roleCategory.includes('data-engineer')}
+                          onCheckedChange={(checked) => handleMultiSelectChange('roleCategory', 'data-engineer', checked as boolean)}
+                        />
+                        <label htmlFor="data-engineer" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Data Engineer
+                        </label>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-              Experience Level
-            </label>
-            <Popover open={openPopovers.experienceLevel} onOpenChange={(isOpen) => togglePopover('experienceLevel', isOpen)}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between text-left font-normal"
-                >
-                  <span>
-                    {pendingFilters.experienceLevel.length === 0
-                      ? "All experience levels"
-                      : pendingFilters.experienceLevel.length === 1
-                        ? pendingFilters.experienceLevel[0].replace(/\b\w/g, l => l.toUpperCase()).replace('-', ' ')
-                        : `${pendingFilters.experienceLevel.length} levels selected`
-                    }
-                  </span>
-                  <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openPopovers.experienceLevel ? 'rotate-180' : ''}`} />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="p-3" style={dropdownContentStyle}>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="entry"
-                      checked={pendingFilters.experienceLevel.includes('entry')}
-                      onCheckedChange={(checked) => handleMultiSelectChange('experienceLevel', 'entry', checked as boolean)}
-                    />
-                    <label htmlFor="entry" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Entry Level
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="associate"
-                      checked={pendingFilters.experienceLevel.includes('associate')}
-                      onCheckedChange={(checked) => handleMultiSelectChange('experienceLevel', 'associate', checked as boolean)}
-                    />
-                    <label htmlFor="associate" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Associate
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="senior"
-                      checked={pendingFilters.experienceLevel.includes('senior')}
-                      onCheckedChange={(checked) => handleMultiSelectChange('experienceLevel', 'senior', checked as boolean)}
-                    />
-                    <label htmlFor="senior" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Senior
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="very-senior"
-                      checked={pendingFilters.experienceLevel.includes('very-senior')}
-                      onCheckedChange={(checked) => handleMultiSelectChange('experienceLevel', 'very-senior', checked as boolean)}
-                    />
-                    <label htmlFor="very-senior" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Very Senior
-                    </label>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                  Location (State)
+                </label>
+                <Popover open={openPopovers.locationState} onOpenChange={(isOpen) => togglePopover('locationState', isOpen)}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between text-left font-normal"
+                    >
+                      <span>
+                        {pendingFilters.locationState.length === 0
+                          ? "All locations"
+                          : pendingFilters.locationState.length === 1
+                            ? getStateFullName(pendingFilters.locationState[0])
+                            : `${pendingFilters.locationState.length} locations selected`
+                        }
+                      </span>
+                      <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openPopovers.locationState ? 'rotate-180' : ''}`} />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-3" style={dropdownContentStyle}>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="nsw"
+                          checked={pendingFilters.locationState.includes('nsw')}
+                          onCheckedChange={(checked) => handleMultiSelectChange('locationState', 'nsw', checked as boolean)}
+                        />
+                        <label htmlFor="nsw" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          New South Wales
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="vic"
+                          checked={pendingFilters.locationState.includes('vic')}
+                          onCheckedChange={(checked) => handleMultiSelectChange('locationState', 'vic', checked as boolean)}
+                        />
+                        <label htmlFor="vic" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Victoria
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="qld"
+                          checked={pendingFilters.locationState.includes('qld')}
+                          onCheckedChange={(checked) => handleMultiSelectChange('locationState', 'qld', checked as boolean)}
+                        />
+                        <label htmlFor="qld" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Queensland
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="wa"
+                          checked={pendingFilters.locationState.includes('wa')}
+                          onCheckedChange={(checked) => handleMultiSelectChange('locationState', 'wa', checked as boolean)}
+                        />
+                        <label htmlFor="wa" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Western Australia
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="sa"
+                          checked={pendingFilters.locationState.includes('sa')}
+                          onCheckedChange={(checked) => handleMultiSelectChange('locationState', 'sa', checked as boolean)}
+                        />
+                        <label htmlFor="sa" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          South Australia
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="tas"
+                          checked={pendingFilters.locationState.includes('tas')}
+                          onCheckedChange={(checked) => handleMultiSelectChange('locationState', 'tas', checked as boolean)}
+                        />
+                        <label htmlFor="tas" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Tasmania
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="act"
+                          checked={pendingFilters.locationState.includes('act')}
+                          onCheckedChange={(checked) => handleMultiSelectChange('locationState', 'act', checked as boolean)}
+                        />
+                        <label htmlFor="act" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          ACT
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="nt"
+                          checked={pendingFilters.locationState.includes('nt')}
+                          onCheckedChange={(checked) => handleMultiSelectChange('locationState', 'nt', checked as boolean)}
+                        />
+                        <label htmlFor="nt" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Northern Territory
+                        </label>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-              Location Type
-            </label>
-            <Popover open={openPopovers.locationType} onOpenChange={(isOpen) => togglePopover('locationType', isOpen)}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between text-left font-normal"
-                >
-                  <span>
-                    {pendingFilters.locationType.length === 0
-                      ? "All location types"
-                      : pendingFilters.locationType.length === 1
-                        ? pendingFilters.locationType[0].replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
-                        : `${pendingFilters.locationType.length} types selected`
-                    }
-                  </span>
-                  <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openPopovers.locationType ? 'rotate-180' : ''}`} />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="p-3" style={dropdownContentStyle}>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="major-cities"
-                      checked={pendingFilters.locationType.includes('major-cities')}
-                      onCheckedChange={(checked) => handleMultiSelectChange('locationType', 'major-cities', checked as boolean)}
-                    />
-                    <label htmlFor="major-cities" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Major Cities
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="regional"
-                      checked={pendingFilters.locationType.includes('regional')}
-                      onCheckedChange={(checked) => handleMultiSelectChange('locationType', 'regional', checked as boolean)}
-                    />
-                    <label htmlFor="regional" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Regional / Remote
-                    </label>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        </>
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                  Experience Level
+                </label>
+                <Popover open={openPopovers.experienceLevel} onOpenChange={(isOpen) => togglePopover('experienceLevel', isOpen)}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between text-left font-normal"
+                    >
+                      <span>
+                        {pendingFilters.experienceLevel.length === 0
+                          ? "All experience levels"
+                          : pendingFilters.experienceLevel.length === 1
+                            ? pendingFilters.experienceLevel[0].replace(/\b\w/g, l => l.toUpperCase()).replace('-', ' ')
+                            : `${pendingFilters.experienceLevel.length} levels selected`
+                        }
+                      </span>
+                      <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openPopovers.experienceLevel ? 'rotate-180' : ''}`} />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-3" style={dropdownContentStyle}>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="entry"
+                          checked={pendingFilters.experienceLevel.includes('entry')}
+                          onCheckedChange={(checked) => handleMultiSelectChange('experienceLevel', 'entry', checked as boolean)}
+                        />
+                        <label htmlFor="entry" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Entry Level
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="associate"
+                          checked={pendingFilters.experienceLevel.includes('associate')}
+                          onCheckedChange={(checked) => handleMultiSelectChange('experienceLevel', 'associate', checked as boolean)}
+                        />
+                        <label htmlFor="associate" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Associate
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="senior"
+                          checked={pendingFilters.experienceLevel.includes('senior')}
+                          onCheckedChange={(checked) => handleMultiSelectChange('experienceLevel', 'senior', checked as boolean)}
+                        />
+                        <label htmlFor="senior" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Senior
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="very-senior"
+                          checked={pendingFilters.experienceLevel.includes('very-senior')}
+                          onCheckedChange={(checked) => handleMultiSelectChange('experienceLevel', 'very-senior', checked as boolean)}
+                        />
+                        <label htmlFor="very-senior" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Very Senior
+                        </label>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                  Location Type
+                </label>
+                <Popover open={openPopovers.locationType} onOpenChange={(isOpen) => togglePopover('locationType', isOpen)}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between text-left font-normal"
+                    >
+                      <span>
+                        {pendingFilters.locationType.length === 0
+                          ? "All location types"
+                          : pendingFilters.locationType.length === 1
+                            ? pendingFilters.locationType[0].replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())
+                            : `${pendingFilters.locationType.length} types selected`
+                        }
+                      </span>
+                      <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openPopovers.locationType ? 'rotate-180' : ''}`} />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-3" style={dropdownContentStyle}>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="major-cities"
+                          checked={pendingFilters.locationType.includes('major-cities')}
+                          onCheckedChange={(checked) => handleMultiSelectChange('locationType', 'major-cities', checked as boolean)}
+                        />
+                        <label htmlFor="major-cities" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Major Cities
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="regional"
+                          checked={pendingFilters.locationType.includes('regional')}
+                          onCheckedChange={(checked) => handleMultiSelectChange('locationType', 'regional', checked as boolean)}
+                        />
+                        <label htmlFor="regional" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          Regional / Remote
+                        </label>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -865,21 +943,23 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
           )}
         </div>
 
-        {/* Apply Button */}
-        <div className="mt-4 flex justify-end">
-          <Button
-            onClick={handleApplyFilters}
-            disabled={!hasPendingChanges}
-            className="bg-datacareer-darkBlue text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Apply Filters
-          </Button>
-        </div>
+        {/* Apply Button - only show here for database view; tracker shows inline */}
+        {activeTab !== 'tracker' && (
+          <div className="mt-4 flex justify-end">
+            <Button
+              onClick={handleApplyFilters}
+              disabled={!hasPendingChanges}
+              className="bg-datacareer-darkBlue text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Apply Filters
+            </Button>
+          </div>
+        )}
 
 
         {/* Download and Saved Filters Buttons */}
         <div className="mt-4 pt-4 border-t">
-            <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             {/* Download Buttons - only show dataset choices in Database view */}
             {activeTab !== 'tracker' && (
               <div className="flex flex-col sm:flex-row gap-2 flex-1">
@@ -919,14 +999,27 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
               </div>
             )}
 
-            {/* Saved Filters Button */}
-            <Button
-              variant="outline"
-              className="flex items-center text-white gap-2 bg-datacareer-blue hover:bg-datacareer-darkBlue whitespace-nowrap text-xs sm:text-sm hover:text-white"
-              onClick={handleDownloadCurrent}
-            >
-              Download (CSV)
-            </Button>
+            {/* Saved Filters Button - only show when NOT tracker (tracker has inline download) */}
+            {activeTab !== 'tracker' && (
+              <Button
+                variant="outline"
+                className="flex items-center text-white gap-2 bg-datacareer-blue hover:bg-datacareer-darkBlue whitespace-nowrap text-xs sm:text-sm hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                onClick={handleDownloadCurrent}
+                disabled={isDownloading}
+              >
+                {isDownloading ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                    Downloading...
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-2">
+                    <Download className="h-4 w-4" />
+                    Download (CSV)
+                  </span>
+                )}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -957,7 +1050,8 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                 // Format the value for display
                 let displayValue: any = value;
                 if (key === 'postedDate' && value instanceof Date) {
-                  displayValue = format(value, 'yyyy-MM-dd');
+                  // Show the same local date the user selected (dd-MM-yyyy)
+                  displayValue = format(value as Date, 'dd-MM-yyyy');
                 } else if (key === 'locationState' && Array.isArray(value)) {
                   displayValue = value.map(state => getStateFullName(state)).join(', ');
                 } else if (Array.isArray(value)) {
