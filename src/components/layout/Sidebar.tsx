@@ -120,7 +120,7 @@ const Sidebar: React.FC = () => {
              {userPlan === 'free' && (
           <Button
             variant="outline"
-            className={`w-full justify-start gap-3 px-3 py-2.5   ${
+            className={`w-full justify-center gap-3 px-3 py-2.5   ${
               isCollapsed ? 'px-2' : ''
             }`}
             onClick={() => {
@@ -137,7 +137,7 @@ const Sidebar: React.FC = () => {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className={`w-full justify-start gap-3 px-3 py-2.5 text-gray-700 hover:bg-gray-100 ${
+              className={`w-full justify-center gap-3 px-3 py-2.5 text-gray-700 hover:bg-gray-100 ${
                 isCollapsed ? 'px-2' : ''
               }`}
             >
@@ -184,7 +184,7 @@ const Sidebar: React.FC = () => {
         {/* Logout Button */}
         <Button
           variant="ghost"
-          className={`w-full justify-start gap-3 px-3 py-2.5 text-red-600 hover:bg-red-50 hover:text-red-700 ${
+          className={`w-full justify-center gap-3 px-3 py-2.5 text-red-600 hover:bg-red-50 hover:text-red-700 ${
             isCollapsed ? 'px-2' : ''
           }`}
           onClick={() => {
