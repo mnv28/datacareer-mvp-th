@@ -488,7 +488,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
     <div className="bg-white rounded-lg shadow-sm border mb-4">
       {/* Filter Row 1 - Dropdowns */}
       <div className="p-3 sm:p-4 border-b">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+        <div className="">
           {/* <div>
             <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Posted Date
@@ -514,57 +514,58 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
             </Popover>
           </div> */}
           {activeTab === 'tracker' ? (
-            <div className="col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-4">
-              <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-                <div className="flex-1 min-w-0">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Posted Date</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {pendingFilters.postedDate ? formatDateDisplayLocal(pendingFilters.postedDate) : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={pendingFilters.postedDate}
-                        onSelect={(date) => handlePendingFilterChange('postedDate', date)}
-                        initialFocus
-                        disabled={(date) => date > today}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+            <div>
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+                <div className='flex justify-start items-center gap-3'>
+                  <div className="flex-1 w-48">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Posted Date</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {pendingFilters.postedDate ? formatDateDisplayLocal(pendingFilters.postedDate) : "Pick a date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={pendingFilters.postedDate}
+                          onSelect={(date) => handlePendingFilterChange('postedDate', date)}
+                          initialFocus
+                          disabled={(date) => date > today}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
 
-                <div className="w-56">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <Select
-                    value={(pendingFilters as any).status ? (pendingFilters as any).status : '_all'}
-                    onValueChange={(val) => {
-                      const out = val === '_all' ? '' : val;
-                      handlePendingFilterChange('status' as keyof JobFilters, out);
-                    }}
-                  >
-                    <SelectTrigger className="h-9 text-xs w-full">
-                      <SelectValue placeholder="All statuses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="_all">All statuses</SelectItem>
-                      <SelectItem value="Yet to Apply">Yet to Apply</SelectItem>
-                      <SelectItem value="First Contact">First Contact</SelectItem>
-                      <SelectItem value="Applied">Applied</SelectItem>
-                      <SelectItem value="Interview">Interview</SelectItem>
-                      <SelectItem value="Rejected">Rejected</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex-1 w-48">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <Select
+                      value={(pendingFilters as any).status ? (pendingFilters as any).status : '_all'}
+                      onValueChange={(val) => {
+                        const out = val === '_all' ? '' : val;
+                        handlePendingFilterChange('status' as keyof JobFilters, out);
+                      }}
+                    >
+                      <SelectTrigger className="h-9 text-xs w-full">
+                        <SelectValue placeholder="All statuses" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_all">All statuses</SelectItem>
+                        <SelectItem value="Yet to Apply">Yet to Apply</SelectItem>
+                        <SelectItem value="First Contact">First Contact</SelectItem>
+                        <SelectItem value="Applied">Applied</SelectItem>
+                        <SelectItem value="Interview">Interview</SelectItem>
+                        <SelectItem value="Rejected">Rejected</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-
-                <div className="flex-shrink-0 flex items-center gap-2">
+                <div className="flex-shrink-0 flex items-end gap-2">
                   <Button
                     onClick={handleApplyFilters}
                     disabled={!hasPendingChanges}
@@ -577,7 +578,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                     variant="outline"
                     onClick={handleDownloadCurrent}
                     disabled={isDownloading}
-                    className="flex items-center text-white gap-2 bg-datacareer-blue hover:bg-datacareer-darkBlue whitespace-nowrap text-xs sm:text-sm hover:text-white h-9 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="flex items-center text-white gap-2 bg-[#7692ff] hover:bg-datacareer-darkBlue whitespace-nowrap text-xs sm:text-sm hover:text-white h-9 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {isDownloading ? (
                       <span className="inline-flex items-center gap-2">
@@ -594,33 +595,34 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                 </div>
               </div>
             </div>
+            // <></>
           ) : (
-            <>
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-              Posted Date
-            </label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                        {pendingFilters.postedDate ? formatDateDisplayLocal(pendingFilters.postedDate) : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={pendingFilters.postedDate}
-                  onSelect={(date) => handlePendingFilterChange('postedDate', date)}
-                  initialFocus
-                  disabled={(date) => date > today}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                  Posted Date
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {pendingFilters.postedDate ? formatDateDisplayLocal(pendingFilters.postedDate) : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={pendingFilters.postedDate}
+                      onSelect={(date) => handlePendingFilterChange('postedDate', date)}
+                      initialFocus
+                      disabled={(date) => date > today}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
               <div>
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                   Role Category
@@ -892,7 +894,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                   </PopoverContent>
                 </Popover>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -1003,7 +1005,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
             {activeTab !== 'tracker' && (
               <Button
                 variant="outline"
-                className="flex items-center text-white gap-2 bg-datacareer-blue hover:bg-datacareer-darkBlue whitespace-nowrap text-xs sm:text-sm hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex items-center text-white gap-2 bg-[#7692ff] hover:bg-datacareer-darkBlue whitespace-nowrap text-xs sm:text-sm hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
                 onClick={handleDownloadCurrent}
                 disabled={isDownloading}
               >

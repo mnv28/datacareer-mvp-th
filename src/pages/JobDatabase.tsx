@@ -311,6 +311,14 @@ const JobDatabase: React.FC = () => {
       
       setCurrentPage(page);
       setTotalPages(deriveTotalPages(resp?.data, mappedJobs.length || 0, page));
+      
+      // Update job statistics from saved jobs API response
+      if (resp?.data?.last_7_days !== undefined && resp?.data?.last_30_days !== undefined) {
+        setJobStats({
+          last7Days: resp.data.last_7_days || 0,
+          last30Days: resp.data.last_30_days || 0,
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -462,15 +470,15 @@ const JobDatabase: React.FC = () => {
       <div className="min-h-screen bg-gray-50">
         {/* Header Section */}
         <div className="bg-datacareer-darkBlue text-white">
-          <div className="mx-auto px-4 py-8">
+          <div className="mx-auto px-8 py-8">
             <div className="flex flex-col gap-6">
               <div className="flex-1">
-                <h1 className="text-2xl lg:text-3xl font-bold mb-4">
+                <h1 className="text-2xl lg:text-3xl font-bold mb-6">
                   Curated & Handpicked Job Database
                 </h1>
                 
                 {/* Disclaimer Messages */}
-                <div className="space-y-2 mb-6">
+                <div className="space-y-2">
                   <div className="flex items-start gap-2 text-xs lg:text-sm">
                   ⚠️ We are not recruiters or job owners—we just share #data job listings to help job seekers.
                   </div>
@@ -490,7 +498,7 @@ const JobDatabase: React.FC = () => {
               </div>
 
               {/* Bottom Section - Status Bar and Navigation Tabs */}
-              <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mt-6">
+              <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
                 {/* Status Bar */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs lg:text-sm">
                   <div className="flex items-center gap-2">
