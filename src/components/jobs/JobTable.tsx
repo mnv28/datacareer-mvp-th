@@ -226,6 +226,21 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
     return 'bg-gray-100 text-gray-700 border-gray-200';
   };
 
+  // Helper function to split comma-separated values into individual badges
+  const splitDetailIntoBadges = (details: string[]): string[] => {
+    const splitDetails: string[] = [];
+    details.forEach(detail => {
+      if (detail && detail.includes(',')) {
+        // Split by comma and trim whitespace
+        const parts = detail.split(',').map(part => part.trim()).filter(part => part.length > 0);
+        splitDetails.push(...parts);
+      } else if (detail && detail.trim().length > 0) {
+        splitDetails.push(detail.trim());
+      }
+    });
+    return splitDetails;
+  };
+
   // Show empty state for saved jobs tracker
   if (activeTab === 'tracker' && jobs.length === 0) {
     return (
@@ -344,7 +359,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
                   {format(job.postedDate, "dd/MM/yyyy")}
                   {/* Time ago */}
                   <div className="text-gray-400">
-                    ({formatDistanceToNow(new Date(job.postedDate), { addSuffix: true })})
+                    {formatDistanceToNow(new Date(job.postedDate), { addSuffix: true })}
                   </div>
                 </div>
               </div>
@@ -408,9 +423,9 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
               {/* Other Details */}
               <div className={activeTab === 'tracker' ? 'col-span-2' : 'col-span-2'}>
                 <div className="flex flex-wrap gap-1 mb-2">
-                  {job.otherDetails.map((detail, index) => (
+                  {splitDetailIntoBadges(job.otherDetails).map((detail, index) => (
                     <Badge
-                      key={index}
+                      key={`${job.id}-detail-${index}`}
                       variant="outline"
                       className={`text-xs ${getDetailBadgeColor(detail)}`}
                     >
@@ -502,7 +517,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
                   {format(job.postedDate, "dd/MM/yyyy")}
                   {/* Time ago */}
                   <span className="ml-2 text-gray-400">
-                    ({formatDistanceToNow(new Date(job.postedDate), { addSuffix: true })})
+                    {formatDistanceToNow(new Date(job.postedDate), { addSuffix: true })}
                   </span>
                 </div>
               </div>
@@ -565,9 +580,9 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
               </div>
 
               <div className="flex flex-wrap gap-1">
-                {job.otherDetails.map((detail, index) => (
+                {splitDetailIntoBadges(job.otherDetails).map((detail, index) => (
                   <Badge
-                    key={index}
+                    key={`${job.id}-detail-mobile-${index}`}
                     variant="outline"
                     className={`text-xs ${getDetailBadgeColor(detail)}`}
                   >
