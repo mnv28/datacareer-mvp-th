@@ -84,12 +84,68 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
     }));
   };
 
-  const saveJobToServer = async (apiId?: string, isCurrentlySaved: boolean = false) => {
-    if (!apiId) return null;
+  const saveJobToServer = async (job: Job, isCurrentlySaved: boolean = false) => {
+    console.log("job => ", job);
+    
+    if (!job) return null;
     try {
-      const response = await apiInstance.post('/api/jobs/saveJob', {
-        job_id: apiId,
+      // Try to parse structured location (city/state/location/location_type) from the string we receive
+      let city: string | undefined;
+      let state: string | undefined;
+      let location: string | undefined;
+      let location_type: string | undefined;
+
+      const rawLocation = job.company?.location;
+      if (rawLocation) {
+        try {
+          const parsed = JSON.parse(rawLocation.replace(/'/g, '"'));
+          city = parsed.city || parsed.City;
+          state = parsed.state || parsed.State;
+          location = parsed.location || parsed.Location || rawLocation;
+          location_type = parsed.location_type || parsed.locationType;
+        } catch (err) {
+          // If parsing fails, just send the raw string as location
+          location = rawLocation;
+        }
+      }
+
+      // Best-effort inference of location_type from otherDetails if we still don't have it
+      if (!location_type && job.otherDetails && job.otherDetails.length > 0) {
+        const detailsString = job.otherDetails.join(',').toLowerCase();
+        if (detailsString.includes('remote')) {
+          location_type = 'Remote';
+        } else if (detailsString.includes('hybrid')) {
+          location_type = 'Hybrid';
+        } else if (detailsString.includes('on-site') || detailsString.includes('onsite')) {
+          location_type = 'On-site';
+        }
+      }
+
+      const payload = {
+        // Existing identifier if your backend still uses it
+        job_id: job.apiId,
+        // Fields expected by the saveJob controller you shared
+        posted_date: job.postedDate,
+        job_title: job.company?.title,
+        company_name: job.company?.name,
+        city,
+        state,
+        location,
+        top_tech_skills: job.topTechSkill,
+        function: job.function,
+        industry: job.industry,
+        // These can be filled later when you have them on the Job object
+        role_cat: undefined,
+        exp_level: undefined,
+        sec_clearance: undefined,
+        pr_citizenship_req: undefined,
+        url: job.url,
+        location_type,
         status: 'Yet to Apply',
+      };
+
+      const response = await apiInstance.post('/api/jobs/saveJob', {
+        ...payload,
       });
       return response?.data || null;
     } catch (e) {
@@ -111,11 +167,13 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
   };
 
   const confirmAndUpdateStatus = (job: Job, newUiStatus: string) => {
+    console.log("confirmAndUpdateStatus job => ", job);
     // Open center modal; selection not applied until confirmed
     setConfirmModal({ open: true, mode: 'status', job, newUiStatus, saveResponse: null });
   };
 
   const handleSaveClick = (job: Job) => {
+    console.log("handleSaveClick job => ", job);
     const isCurrentlySaved = savedJobs.has(job.id);
     setConfirmModal({
       open: true,
@@ -129,6 +187,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
   const performConfirm = async () => {
     if (!confirmModal.open || !confirmModal.job) return;
     const job = confirmModal.job;
+    console.log("performConfirm job => ", job);
     if (confirmModal.mode === 'status' && confirmModal.newUiStatus) {
       const newUiStatus = confirmModal.newUiStatus;
       handleStatusChange(job.id, newUiStatus);
@@ -136,7 +195,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
       setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null });
     } else if (confirmModal.mode === 'save') {
       const isCurrentlySaved = savedJobs.has(job.id);
-      const response = await saveJobToServer(job.apiId, isCurrentlySaved);
+      const response = await saveJobToServer(job, isCurrentlySaved);
 
       // Update parent with API response (add or remove based on isSaved)
       if (response && job.apiId) {
