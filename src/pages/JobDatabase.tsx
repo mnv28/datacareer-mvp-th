@@ -260,7 +260,7 @@ const JobDatabase: React.FC = () => {
       if (resp?.data?.last_7_days !== undefined && resp?.data?.last_30_days !== undefined) {
         setJobStats({
           last7Days: resp.data.last_7_days || 0,
-          last30Days: resp.data.last_30_days || 0,
+          last30Days: resp.data.count || 0,
         });
       }
       // Update total pages for pagination window
@@ -316,7 +316,7 @@ const JobDatabase: React.FC = () => {
       if (resp?.data?.last_7_days !== undefined && resp?.data?.last_30_days !== undefined) {
         setJobStats({
           last7Days: resp.data.last_7_days || 0,
-          last30Days: resp.data.last_30_days || 0,
+          last30Days: resp.data.count || 0,
         });
       }
     } finally {
