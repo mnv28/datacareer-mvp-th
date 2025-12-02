@@ -259,10 +259,10 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
       // return 'bg-green-100 text-green-800 border-green-200';
       return 'bg-[#d4edbc] text-[#1e300d] border-[#d4edbc]';
     }
-    if (lowerDetail.includes('associate')) {
-      return 'bg-[#bfe1f6] text-[#082436] border-[#bfe1f6]';
-      // return 'bg-blue-100 text-blue-800 border-blue-200';
-    }
+    // if (lowerDetail.includes('associate')) {
+    //   return 'bg-[#bfe1f6] text-[#082436] border-[#bfe1f6]';
+    //   // return 'bg-blue-100 text-blue-800 border-blue-200';
+    // }
     if (lowerDetail.includes('senior') || lowerDetail.includes('entry-level') || lowerDetail.includes('associate') || lowerDetail.includes('very senior')) {
       return 'bg-[#ffc8aa] text-[#662400] border-[#ffc8aa]';
 

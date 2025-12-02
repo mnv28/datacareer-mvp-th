@@ -7,7 +7,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Filter, X, Download, Save, CalendarIcon, ChevronDown } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfToday } from 'date-fns';
 
 interface JobFilters {
   postedDate: Date | undefined;
@@ -105,7 +105,8 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
     });
   };
 
-  const today = new Date(); // Current date to block future dates
+  // Use midnight-normalised "today" so calendar can't select today or any future date
+  const today = startOfToday(); // Block today and all future dates
   // Apply pending filters (triggers search)
   const handleApplyFilters = () => {
     onFiltersChange(pendingFilters);
