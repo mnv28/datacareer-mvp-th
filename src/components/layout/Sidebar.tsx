@@ -52,6 +52,10 @@ const Sidebar: React.FC = () => {
   };
 
   const isActiveRoute = (path: string) => {
+    // For SQL Practice (path === '/'), also match question detail pages
+    if (path === '/') {
+      return location.pathname === '/' || location.pathname.startsWith('/question/');
+    }
     return location.pathname === path;
   };
 

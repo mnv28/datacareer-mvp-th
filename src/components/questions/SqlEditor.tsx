@@ -308,7 +308,7 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
         >
           <div className="w-8 h-1 bg-gray-300 rounded"></div>
         </div>
-        <div ref={resultsRef} className="h-64 overflow-auto">
+        <div ref={resultsRef}>
           {isExecuting && !results && !error && !submittedQueryDisplay && (
              <div className="p-4 text-center text-gray-500">Executing query...</div>
           )}
@@ -360,7 +360,7 @@ const SqlEditor: React.FC<SqlEditorProps> = ({
           ) : results && results.length === 0 ? (
             <div className="p-4 text-center text-gray-500">Query executed successfully. No rows returned.</div>
           ) : (
-            <div className="flex items-center justify-center h-full text-gray-400">
+            <div className="flex mt-40 justify-center h-[129rem] text-gray-400">
               Run a query to see results
             </div>
           )}
