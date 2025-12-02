@@ -253,6 +253,8 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
 
   const getDetailBadgeColor = (detail: string) => {
     const lowerDetail = detail.toLowerCase();
+    console.log("lowerDetail => ", lowerDetail);
+    
     if (lowerDetail.includes('data engineer') || lowerDetail.includes('data analyst')) {
       // return 'bg-green-100 text-green-800 border-green-200';
       return 'bg-[#d4edbc] text-[#1e300d] border-[#d4edbc]';
@@ -261,7 +263,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
       return 'bg-[#bfe1f6] text-[#082436] border-[#bfe1f6]';
       // return 'bg-blue-100 text-blue-800 border-blue-200';
     }
-    if (lowerDetail.includes('senior')) {
+    if (lowerDetail.includes('senior') || lowerDetail.includes('entry-level') || lowerDetail.includes('associate') || lowerDetail.includes('very senior')) {
       return 'bg-[#ffc8aa] text-[#662400] border-[#ffc8aa]';
 
       // return 'bg-orange-100 text-orange-800 border-orange-200';
@@ -271,7 +273,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
 
       // return 'bg-yellow-100 text-yellow-800 border-yellow-200';
     }
-    if (lowerDetail.includes('remote')) {
+    if (lowerDetail.includes('remote') || lowerDetail.includes('major city')) {
       return 'bg-[#e6cff2] text-[#240d30] border-[#e6cff2]';
 
       // return 'bg-purple-100 text-purple-800 border-purple-200';

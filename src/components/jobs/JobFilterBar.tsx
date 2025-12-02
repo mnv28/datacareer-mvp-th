@@ -205,11 +205,12 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
       .join(' ');
   };
 
-  // Format a Date to UTC 'yyyy-MM-dd' string (server date)
-  const formatDateToYMDUTC = (date?: Date) => {
+  // Format a Date to local 'yyyy-MM-dd' string
+  // This must match how JobDatabase builds its posted_date query param
+  const formatDateToYMDLocal = (date?: Date) => {
     if (!date) return undefined;
     try {
-      return new Date(date).toISOString().split('T')[0];
+      return format(date, 'yyyy-MM-dd');
     } catch {
       return undefined;
     }
@@ -242,7 +243,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
     qp.sort = 'desc';
 
     if (currentFilters.postedDate) {
-      const ymd = formatDateToYMDUTC(currentFilters.postedDate);
+      const ymd = formatDateToYMDLocal(currentFilters.postedDate);
       if (ymd) qp.posted_date = ymd;
     }
     const roleJoined = joinOrUndefined(currentFilters.roleCategory, v => toTitleCase(v.replace('-', ' ')) as string);
@@ -345,9 +346,16 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
 
     const formatDate = (date: any) => {
       if (!date) return ''; // return empty string if no date
-      // If it's a Date object, format it as 'yyyy-MM-dd'
-      const d = new Date(date);
-      return d.toISOString().split('T')[0]; // return just the date part (yyyy-MM-dd)
+      try {
+        const d = new Date(date);
+        // Format using local timezone so CSV matches what user sees in the UI
+        return format(d, 'yyyy-MM-dd');
+      } catch {
+        // Fallback: try to extract date part if it's already an ISO-like string
+        const str = String(date);
+        const parts = str.split('T');
+        return parts[0] || str;
+      }
     };
 
     const lines = [headers.map(formatHeaderLabel).join(',')]; // Add header row
@@ -535,7 +543,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                           selected={pendingFilters.postedDate}
                           onSelect={(date) => handlePendingFilterChange('postedDate', date)}
                           initialFocus
-                          disabled={(date) => date > today}
+                          disabled={(date) => date >= today}
                         />
                       </PopoverContent>
                     </Popover>
@@ -618,7 +626,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                       selected={pendingFilters.postedDate}
                       onSelect={(date) => handlePendingFilterChange('postedDate', date)}
                       initialFocus
-                      disabled={(date) => date > today}
+                      disabled={(date) => date >= today}
                     />
                   </PopoverContent>
                 </Popover>
