@@ -418,7 +418,7 @@ console.log("job =", job);
           <div className="col-span-2">Top tech skill</div>
           <div className="col-span-2">Function</div>
           <div className="col-span-2">Industry</div>
-          <div className={activeTab === 'tracker' ? 'col-span-1' : 'col-span-1'}>Other details</div>
+          <div className={activeTab === 'tracker' ? 'col-span-1' : 'col-span-2'}>Other details</div>
           {activeTab === 'tracker' && (
             <>
               <div className="col-span-1">Status</div>
@@ -510,7 +510,7 @@ console.log("job =", job);
               </div>
 
               {/* Other Details */}
-              <div className={activeTab === 'tracker' ? 'col-span-1' : 'col-span-1'}>
+              <div className={activeTab === 'tracker' ? 'col-span-1' : 'col-span-2'}>
                 <div className="flex flex-wrap gap-1 mb-2">
                   {splitDetailIntoBadges(job.otherDetails).map((detail, index) => (
                     <Badge
