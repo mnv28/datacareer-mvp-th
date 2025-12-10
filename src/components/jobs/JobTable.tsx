@@ -42,7 +42,8 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
     job: Job | null;
     newUiStatus: string | null;
     saveResponse?: { message: string; action: string; isSaved: boolean } | null;
-  }>({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null });
+    isLoading?: boolean;
+  }>({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null, isLoading: false });
 
   const apiStatusToUi = (s?: string) => {
     if (!s) return undefined;
@@ -120,6 +121,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
           location_type = 'On-site';
         }
       }
+console.log("job =", job);
 
       const payload = {
         // Existing identifier if your backend still uses it
@@ -141,6 +143,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
         pr_citizenship_req: undefined,
         url: job.url,
         location_type,
+          other_details: job.otherDetails,
         status: 'Yet to Apply',
       };
 
@@ -180,7 +183,8 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
       mode: 'save',
       job,
       newUiStatus: null,
-      saveResponse: null
+      saveResponse: null,
+      isLoading: false
     });
   };
 
@@ -192,8 +196,14 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
       const newUiStatus = confirmModal.newUiStatus;
       handleStatusChange(job.id, newUiStatus);
       updateJobStatusOnServer(job.apiId, newUiStatus);
-      setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null });
+      setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null, isLoading: false });
     } else if (confirmModal.mode === 'save') {
+      // Set loading state
+      setConfirmModal(prev => ({
+        ...prev,
+        isLoading: true
+      }));
+
       const isCurrentlySaved = savedJobs.has(job.id);
       const response = await saveJobToServer(job, isCurrentlySaved);
 
@@ -209,21 +219,23 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
           mode: 'save',
           job,
           newUiStatus: null,
-          saveResponse: response
+          saveResponse: response,
+          isLoading: false
         });
 
         // Auto-close after 2 seconds
         setTimeout(() => {
-          setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null });
+          setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null, isLoading: false });
         }, 2000);
       } else {
-        setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null });
+        setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null, isLoading: false });
       }
     }
   };
 
   const closeConfirm = () => {
-    setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null });
+    if (confirmModal.isLoading) return; // Prevent closing during loading
+    setConfirmModal({ open: false, mode: null, job: null, newUiStatus: null, saveResponse: null, isLoading: false });
   };
 
   const getStatusColor = (status: string) => {
@@ -324,11 +336,13 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
       {/* Confirmation Modal */}
       {confirmModal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={closeConfirm} />
+          <div className="absolute inset-0 bg-black/40" onClick={confirmModal.isLoading ? undefined : closeConfirm} />
           <div className="relative bg-white rounded-lg shadow-lg w-full max-w-sm mx-4 p-5">
             <h3 className="text-base font-semibold text-gray-900 mb-2">
               {confirmModal.mode === 'save'
-                ? (confirmModal.saveResponse
+                ? (confirmModal.isLoading
+                  ? 'Saving...'
+                  : confirmModal.saveResponse
                   ? (confirmModal.saveResponse.isSaved ? 'Job Saved!' : 'Job Removed')
                   : 'Save this job?')
                 : 'Confirm status change'}
@@ -339,14 +353,24 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
                 <span className="font-medium">{formatStatusName(confirmModal.newUiStatus || '')}</span>?
               </p>
             )}
-            {confirmModal.mode === 'save' && !confirmModal.saveResponse && (
+            {confirmModal.mode === 'save' && confirmModal.isLoading && (
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-4 h-4 border-2 border-gray-300 border-t-datacareer-darkBlue rounded-full animate-spin" />
+                <p className="text-sm text-gray-600">
+                  {savedJobs.has(confirmModal.job?.id || 0)
+                    ? 'Removing job from Saved Jobs...'
+                    : 'Adding job to Saved Jobs...'}
+                </p>
+              </div>
+            )}
+            {confirmModal.mode === 'save' && !confirmModal.saveResponse && !confirmModal.isLoading && (
               <p className="text-sm text-gray-600 mb-4">
                 {savedJobs.has(confirmModal.job?.id || 0)
                   ? 'This job will be removed from your Saved Jobs.'
                   : <>This job will be added to your Saved Jobs with status <span className="font-medium">Yet to Apply</span>.</>}
               </p>
             )}
-            {confirmModal.mode === 'save' && confirmModal.saveResponse && (
+            {confirmModal.mode === 'save' && confirmModal.saveResponse && !confirmModal.isLoading && (
               <p className={`text-sm mb-4 ${confirmModal.saveResponse.isSaved
                 ? 'text-green-600'
                 : 'text-gray-600'
@@ -355,7 +379,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
               </p>
             )}
             <div className="flex justify-end gap-2">
-              {!confirmModal.saveResponse && (
+              {!confirmModal.saveResponse && !confirmModal.isLoading && (
                 <button
                   className="px-3 py-1 rounded border text-sm hover:bg-gray-50"
                   onClick={closeConfirm}
@@ -365,10 +389,14 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
               )}
               {!confirmModal.saveResponse ? (
                 <button
-                  className="px-3 py-1 rounded bg-datacareer-darkBlue text-white text-sm hover:opacity-90"
+                  className="px-3 py-1 rounded bg-datacareer-darkBlue text-white text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   onClick={performConfirm}
+                  disabled={confirmModal.isLoading}
                 >
-                  Confirm
+                  {confirmModal.isLoading && (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  )}
+                  {confirmModal.isLoading ? 'Saving...' : 'Confirm'}
                 </button>
               ) : (
                 <button
@@ -390,7 +418,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
           <div className="col-span-2">Top tech skill</div>
           <div className="col-span-2">Function</div>
           <div className="col-span-2">Industry</div>
-          <div className={activeTab === 'tracker' ? 'col-span-2' : 'col-span-2'}>Other details</div>
+          <div className={activeTab === 'tracker' ? 'col-span-1' : 'col-span-1'}>Other details</div>
           {activeTab === 'tracker' && (
             <>
               <div className="col-span-1">Status</div>
@@ -482,7 +510,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
               </div>
 
               {/* Other Details */}
-              <div className={activeTab === 'tracker' ? 'col-span-2' : 'col-span-2'}>
+              <div className={activeTab === 'tracker' ? 'col-span-1' : 'col-span-1'}>
                 <div className="flex flex-wrap gap-1 mb-2">
                   {splitDetailIntoBadges(job.otherDetails).map((detail, index) => (
                     <Badge
