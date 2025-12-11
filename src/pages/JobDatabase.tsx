@@ -56,7 +56,7 @@ const JobDatabase: React.FC = () => {
       if (r?.role_cat) details.push(String(r.role_cat));
       if (r?.exp_level) details.push(String(r.exp_level));
       if (r?.location_type) details.push(String(r.location_type));
-      if (r?.sec_clearance) details.push('Clearance');
+      if (r?.sec_clearance && r.sec_clearance !== '0') details.push('Clearance');
       return {
         id: idx + 1,
         apiId: r?.id || '',
@@ -74,6 +74,14 @@ const JobDatabase: React.FC = () => {
         func: r?.function || '',
         industry: r?.industry || '',
         otherDetails: details,
+        // Store original API fields for saving jobs properly
+        role_cat: r?.role_cat || undefined,
+        exp_level: r?.exp_level || undefined,
+        sec_clearance: r?.sec_clearance || undefined,
+        pr_citizenship_req: r?.pr_citizenship_req || undefined,
+        location_type: r?.location_type || undefined,
+        city: r?.city || undefined,
+        state: r?.state || undefined,
       };
     });
   };
@@ -137,6 +145,14 @@ const JobDatabase: React.FC = () => {
         industry: jobData?.industry || r?.industry || '',
         otherDetails: details,
         status: r?.status, // status comes from the saved job record, not the job object
+        // Store original API fields for saving jobs properly
+        role_cat: jobData?.role_cat || r?.role_cat || undefined,
+        exp_level: jobData?.exp_level || r?.exp_level || undefined,
+        sec_clearance: jobData?.sec_clearance || r?.sec_clearance || undefined,
+        pr_citizenship_req: jobData?.pr_citizenship_req || r?.pr_citizenship_req || undefined,
+        location_type: jobData?.location_type || r?.location_type || undefined,
+        city: jobData?.city || r?.city || undefined,
+        state: jobData?.state || r?.state || undefined,
       };
     });
   };

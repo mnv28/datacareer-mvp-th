@@ -25,6 +25,14 @@ interface Job {
   industry: string;
   otherDetails: string[];
   status?: string; // optional server status for tracker,
+  // Original API fields for saving jobs properly
+  role_cat?: string;
+  exp_level?: string;
+  sec_clearance?: string;
+  pr_citizenship_req?: string;
+  location_type?: string;
+  city?: string;
+  state?: string;
 }
 
 interface JobTableProps {
@@ -90,27 +98,32 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
     
     if (!job) return null;
     try {
-      // Try to parse structured location (city/state/location/location_type) from the string we receive
-      let city: string | undefined;
-      let state: string | undefined;
+      // Use stored fields from Job object if available, otherwise try to parse from location string
+      let city: string | undefined = job.city;
+      let state: string | undefined = job.state;
       let location: string | undefined;
-      let location_type: string | undefined;
+      let location_type: string | undefined = job.location_type;
 
       const rawLocation = job.company?.location;
       if (rawLocation) {
-        try {
-          const parsed = JSON.parse(rawLocation.replace(/'/g, '"'));
-          city = parsed.city || parsed.City;
-          state = parsed.state || parsed.State;
-          location = parsed.location || parsed.Location || rawLocation;
-          location_type = parsed.location_type || parsed.locationType;
-        } catch (err) {
-          // If parsing fails, just send the raw string as location
+        // If we don't have city/state from stored fields, try parsing location string
+        if (!city || !state) {
+          try {
+            const parsed = JSON.parse(rawLocation.replace(/'/g, '"'));
+            city = city || parsed.city || parsed.City;
+            state = state || parsed.state || parsed.State;
+            location = parsed.location || parsed.Location || rawLocation;
+            location_type = location_type || parsed.location_type || parsed.locationType;
+          } catch (err) {
+            // If parsing fails, just send the raw string as location
+            location = rawLocation;
+          }
+        } else {
           location = rawLocation;
         }
       }
 
-      // Best-effort inference of location_type from otherDetails if we still don't have it
+      // If location_type is still not set, try to infer from otherDetails
       if (!location_type && job.otherDetails && job.otherDetails.length > 0) {
         const detailsString = job.otherDetails.join(',').toLowerCase();
         if (detailsString.includes('remote')) {
@@ -119,9 +132,20 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
           location_type = 'Hybrid';
         } else if (detailsString.includes('on-site') || detailsString.includes('onsite')) {
           location_type = 'On-site';
+        } else if (detailsString.includes('major city')) {
+          location_type = 'Major city';
         }
       }
-console.log("job =", job);
+
+      // Extract sec_clearance from otherDetails if not stored directly
+      let sec_clearance: string | undefined = job.sec_clearance;
+      if (!sec_clearance && job.otherDetails && job.otherDetails.some(d => d.toLowerCase().includes('clearance'))) {
+        sec_clearance = '1'; // If 'Clearance' is in otherDetails, set to '1'
+      } else if (!sec_clearance) {
+        sec_clearance = '0'; // Default to '0' if not found
+      }
+
+      console.log("job =", job);
 
       const payload = {
         // Existing identifier if your backend still uses it
@@ -130,20 +154,20 @@ console.log("job =", job);
         posted_date: job.postedDate,
         job_title: job.company?.title,
         company_name: job.company?.name,
-        city,
-        state,
-        location,
+        city: city || null,
+        state: state || null,
+        location: location || job.company?.location || null,
         top_tech_skills: job.topTechSkill,
         function: job.function,
         industry: job.industry,
-        // These can be filled later when you have them on the Job object
-        role_cat: undefined,
-        exp_level: undefined,
-        sec_clearance: undefined,
-        pr_citizenship_req: undefined,
+        // Use stored fields from Job object
+        role_cat: job.role_cat || null,
+        exp_level: job.exp_level || null,
+        sec_clearance: sec_clearance || '0',
+        pr_citizenship_req: job.pr_citizenship_req || null,
         url: job.url,
-        location_type,
-          other_details: job.otherDetails,
+        location_type: location_type || null,
+        other_details: job.otherDetails,
         status: 'Yet to Apply',
       };
 
@@ -418,7 +442,7 @@ console.log("job =", job);
           <div className="col-span-2">Top tech skill</div>
           <div className="col-span-2">Function</div>
           <div className="col-span-2">Industry</div>
-          <div className={activeTab === 'tracker' ? 'col-span-1' : 'col-span-2'}>Other details abc</div>
+          <div className={activeTab === 'tracker' ? 'col-span-1' : 'col-span-2'}>Other details</div>
           {activeTab === 'tracker' && (
             <>
               <div className="col-span-1">Status</div>
@@ -689,3 +713,4 @@ console.log("job =", job);
 };
 
 export default JobTable;
+
