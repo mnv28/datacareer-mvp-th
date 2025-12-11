@@ -442,7 +442,7 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
           <div className="col-span-2">Top tech skill</div>
           <div className="col-span-2">Function</div>
           <div className="col-span-2">Industry</div>
-          <div className={activeTab === 'tracker' ? 'col-span-1' : 'col-span-2'}>Other details</div>
+          <div className={activeTab === 'tracker' ? 'col-span-1' : 'col-span-2'}>Other details abc</div>
           {activeTab === 'tracker' && (
             <>
               <div className="col-span-1">Status</div>
