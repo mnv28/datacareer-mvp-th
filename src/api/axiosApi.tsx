@@ -28,8 +28,10 @@ apiInstance.interceptors.response.use(
     (error) => {
         if (error.response?.status === 401) {
             localStorage.removeItem('token');
+            localStorage.removeItem('user');
             window.location.href = '/login';
         }
+        // Don't redirect on 403 (trial expired) - let ProtectedRoute handle it
         return Promise.reject(error);
     }
 ); 

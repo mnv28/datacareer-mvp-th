@@ -23,10 +23,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAppDispatch } from '@/redux/hooks';
+import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { logout } from '@/redux/slices/authSlice';
 import { toast } from 'sonner';
 import { useSidebar } from '@/contexts/SidebarContext';
+import { paymentService } from '@/redux/services/payment';
 import logodatacareer from '../../../public/logoDataCareer.png';
 import favicon from '../../../public/DCA - Full Colour Logo Only (1).svg';
 
@@ -34,12 +35,14 @@ import favicon from '../../../public/DCA - Full Colour Logo Only (1).svg';
 const Sidebar: React.FC = () => {
   const { isCollapsed, setIsCollapsed } = useSidebar();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, trialStatus } = useAppSelector((state) => state.auth);
 
-  // Mock user data - replace with actual user data from Redux/context
-  const userPlan = 'free'; // or 'premium'
+  // Determine user plan based on payment status
+  const userPlan = user?.paymentDone || trialStatus === 'paid' ? 'premium' : 'free';
 
   const handleLogout = async () => {
     try {
@@ -48,6 +51,28 @@ const Sidebar: React.FC = () => {
       navigate('/login');
     } catch (error) {
       toast.error('Failed to logout');
+    }
+  };
+
+  const handleUpgrade = async () => {
+    setIsMobileOpen(false);
+    setIsUpgrading(true);
+
+    try {
+      // Create Stripe checkout session and redirect
+      const response = await paymentService.createCheckoutSession();
+      
+      if (response.success && response.url) {
+        // Redirect to Stripe checkout
+        window.location.href = response.url;
+      } else {
+        throw new Error('Failed to create checkout session');
+      }
+    } catch (error: any) {
+      console.error('Upgrade error:', error);
+      const errorMessage = error.message || 'Failed to start checkout. Please try again.';
+      toast.error(errorMessage);
+      setIsUpgrading(false);
     }
   };
 
@@ -121,21 +146,23 @@ const Sidebar: React.FC = () => {
       <div className="p-3 border-t border-gray-200 space-y-1">
         {/* User Account Settings Dropdown */}
         <div>
-             {userPlan === 'free' && (
-          <Button
-            variant="outline"
-            className={`w-full justify-center gap-3 px-3 py-2.5   ${
-              isCollapsed ? 'px-2' : ''
-            }`}
-            onClick={() => {
-              setIsMobileOpen(false);
-              navigate('/upgrade');
-            }}
-          >
-            <Crown className="h-5 w-5 flex-shrink-0" />
-            {!isCollapsed && <span className="text-sm font-medium">Upgrade</span>}
-          </Button>
-        )}
+          {userPlan === 'free' && (
+            <Button
+              variant="outline"
+              className={`w-full justify-center gap-3 px-3 py-2.5 ${
+                isCollapsed ? 'px-2' : ''
+              }`}
+              onClick={handleUpgrade}
+              disabled={isUpgrading}
+            >
+              <Crown className="h-5 w-5 flex-shrink-0" />
+              {!isCollapsed && (
+                <span className="text-sm font-medium">
+                  {isUpgrading ? 'Redirecting...' : 'Upgrade to Pro'}
+                </span>
+              )}
+            </Button>
+          )}
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

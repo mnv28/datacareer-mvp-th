@@ -29,8 +29,11 @@ const Register = () => {
 
     try {
       await dispatch(register({ name, email, password })).unwrap();
-      toast.success('Account created successfully!');
-      navigate('/');
+      toast.success('Account created successfully! Please login to continue.');
+      // Clear token and user data so user has to login manually
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      navigate('/login');
     } catch (error) {
       toast.error(error as string);
     }
