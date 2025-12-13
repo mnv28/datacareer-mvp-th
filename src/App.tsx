@@ -11,6 +11,8 @@ import ResetPassword from '@/pages/auth/ResetPassword';
 import Index from '@/pages/Index';
 import QuestionDetail from '@/pages/QuestionDetail';
 import JobDatabase from '@/pages/JobDatabase';
+import PaymentSuccess from '@/pages/payment/PaymentSuccess';
+import PaymentCancel from '@/pages/payment/PaymentCancel';
 import { store } from './redux/store';
 import { SidebarProvider } from './contexts/SidebarContext';
 
@@ -25,6 +27,10 @@ const App = () => {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            
+            {/* Payment redirect routes - minimal, just redirect */}
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/cancel" element={<PaymentCancel />} />
 
             {/* Protected routes */}
             <Route

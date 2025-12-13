@@ -181,7 +181,6 @@ import { apiInstance } from "@/api/axiosApi";
 
 function Index() {
   const [companies, setCompanies] = useState<Company[]>([]);
-  console.log("company=", companies);
 
   const [loadingCompanies, setLoadingCompanies] = useState(true);
   const [errorCompanies, setErrorCompanies] = useState<string | null>(null);
@@ -225,8 +224,6 @@ function Index() {
 
         const data = response.data;
 
-        console.log("API response data.companies:", data.companies);
-
         const transformedCompanies: Company[] = data.companies.map((company) => ({
           id: company.id,
           name: company.name,
@@ -260,7 +257,6 @@ function Index() {
         setCompanies(transformedCompanies);
       } catch (e) {
         setErrorCompanies(e.message);
-        console.error("Fetching companies failed:", e);
       } finally {
         setLoadingCompanies(false);
       }
@@ -277,7 +273,6 @@ function Index() {
         setProgressData(response.data.progress);
       } catch (e) {
         setErrorProgress(e.message);
-        console.error("Fetching progress failed:", e);
       } finally {
         setLoadingProgress(false);
       }
