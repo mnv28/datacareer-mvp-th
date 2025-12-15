@@ -8,13 +8,17 @@ export const apiInstance = axios.create({
     }
 });
 
-// Add request interceptor
+// Add request interceptor to attach JWT token
 apiInstance.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token');
+        // Get token from localStorage (check both 'token' and 'accessToken' for compatibility)
+        const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+        
         if (token) {
+            // Ensure Authorization header is set correctly
             config.headers.Authorization = `Bearer ${token}`;
         }
+        
         return config;
     },
     (error) => {

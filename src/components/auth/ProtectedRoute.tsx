@@ -39,13 +39,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
     setCurrentTrialStatus(derivedTrialStatus);
 
-    if (derivedTrialStatus && user) {
-      // Show modal if trial expired and payment not done
-      if ((derivedTrialStatus === 'trial-expired' || derivedTrialStatus === 'no-trial') && !user.paymentDone) {
-        setShowTrialModal(true);
-      } else {
-        setShowTrialModal(false);
-      }
+    // Immediately show modal if trial expired - no delay
+    if (derivedTrialStatus === 'trial-expired' && user && !user.paymentDone) {
+      setShowTrialModal(true);
+      setIsCheckingTrial(false);
+      return;
     }
     
     setIsCheckingTrial(false);
@@ -55,20 +53,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Show loading while checking trial status
-  if (isCheckingTrial) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-datacareer-blue border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Block access if trial expired and payment not done
-  if ((currentTrialStatus === 'trial-expired' || currentTrialStatus === 'no-trial') && !user?.paymentDone) {
+  if (currentTrialStatus === 'trial-expired' && !user?.paymentDone) {
     return (
       <>
         <div className="min-h-screen flex items-center justify-center bg-gray-50">

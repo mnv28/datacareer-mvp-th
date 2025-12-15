@@ -13,20 +13,43 @@ export const paymentService = {
    */
   createCheckoutSession: async (): Promise<CreateCheckoutSessionResponse> => {
     try {
+      // Verify token exists before making request
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Authentication required. Please login to continue.');
+      }
+
+      // Make request - axios interceptor will automatically add Authorization header
       const response = await apiInstance.post<CreateCheckoutSessionResponse>(
-        '/api/payment/create-checkout-session'
+        '/api/payment/create-checkout-session',
+        {} // Empty body if backend doesn't require it
       );
       return response.data;
     } catch (error: any) {
-      // Handle specific errors
+      // Handle specific HTTP status codes
       if (error.response?.status === 401) {
-        throw new Error('Please login to continue');
+        // Unauthorized - token missing or invalid
+        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        throw new Error('Session expired. Please login again.');
+      }
+      if (error.response?.status === 403) {
+        // Forbidden - token valid but insufficient permissions
+        const errorMessage = error.response?.data?.message 
+          || error.response?.data?.error 
+          || 'Access denied. You do not have permission to perform this action.';
+        throw new Error(errorMessage);
       }
       if (error.response?.status === 500) {
-        throw new Error('Price ID not configured. Please contact support.');
+        throw new Error('Server error. Please contact support.');
       }
       if (error.response?.data?.message) {
         throw new Error(error.response.data.message);
+      }
+      if (error.message) {
+        throw error;
       }
       throw new Error('Failed to create checkout session. Please try again.');
     }
