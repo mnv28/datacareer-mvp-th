@@ -11,6 +11,8 @@ interface User {
   progressSummary: Record<string, unknown> | null;
   status: string;
   paymentDone?: boolean;
+  subscriptionStatus?: string;
+  planType?: string;
   trialStart?: string | null;
   trialUsed?: boolean;
 }

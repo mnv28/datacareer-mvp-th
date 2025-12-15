@@ -48,6 +48,30 @@ const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({ open, onPaymentSu
         errorMessage = error.message;
       }
       
+      // Check if user already has active subscription
+      if (errorMessage.includes('already have an active subscription') || 
+          errorMessage.includes('already subscribed')) {
+        // User already paid - update state and close modal
+        try {
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            const user = JSON.parse(userStr);
+            user.paymentDone = true;
+            user.subscriptionStatus = 'active';
+            localStorage.setItem('user', JSON.stringify(user));
+          }
+        } catch (e) {
+          // ignore
+        }
+        
+        toast.success('Your subscription is already active!');
+        // Reload page to refresh state
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+        return;
+      }
+      
       // Handle specific status codes
       if (error.response?.status === 403) {
         // 403 Forbidden - show backend message or default
@@ -81,23 +105,28 @@ const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({ open, onPaymentSu
           e.preventDefault();
         }}
       >
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-datacareer-darkBlue">
+        <DialogHeader className="text-center">
+          <DialogTitle className="text-2xl font-bold text-gray-900">
             Trial Period Expired
           </DialogTitle>
-          <DialogDescription className="text-base pt-2">
+          <DialogDescription className="text-base pt-2 text-gray-600">
             Your 7-day free trial has ended. Subscribe now to continue accessing all features.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="mt-4">
-          <div className="bg-gradient-to-r from-datacareer-blue to-datacareer-lightBlue p-4 rounded-lg mb-6">
+        <div className="mt-6">
+          <div className="bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 p-6 rounded-2xl mb-6 shadow-xl border border-blue-400">
             <div className="flex items-center justify-between text-white">
               <div>
-                <p className="text-sm opacity-90">Monthly Subscription</p>
-                <p className="text-2xl font-bold">$4.90/month</p>
+                <p className="text-sm font-semibold opacity-90 mb-2 tracking-wide uppercase">Monthly Subscription</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold">$4.90</span>
+                  <span className="text-lg font-medium opacity-90">/month</span>
+                </div>
               </div>
-              <Lock className="h-8 w-8 opacity-80" />
+              <div className="bg-white/20 p-4 rounded-xl backdrop-blur-sm">
+                <Lock className="h-10 w-10" />
+              </div>
             </div>
           </div>
 
@@ -113,28 +142,28 @@ const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({ open, onPaymentSu
               </div>
             )}
             
-            <div className="pt-4">
+            <div className="pt-2">
               <Button
                 onClick={handleUpgrade}
-                className="w-full bg-datacareer-blue hover:bg-datacareer-darkBlue text-white h-12 text-base font-semibold"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white h-14 text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]"
                 disabled={isUpgrading}
               >
                 {isUpgrading ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Redirecting...
+                    <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                    Processing Payment...
                   </>
                 ) : (
                   <>
-                    <CreditCard className="mr-2 h-5 w-5" />
-                    Upgrade to Pro
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    <CreditCard className="mr-2 h-6 w-6" />
+                    Subscribe Now
+                    <ArrowRight className="ml-2 h-6 w-6" />
                   </>
                 )}
               </Button>
             </div>
 
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-xs text-gray-500 text-center leading-relaxed">
               Your subscription will auto-renew monthly. You can cancel anytime from your account settings.
             </p>
           </div>

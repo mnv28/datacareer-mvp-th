@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import AuthLayout from '@/components/auth/AuthLayout';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import { register } from '@/redux/slices/authSlice';
+import { register, logout } from '@/redux/slices/authSlice';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -29,6 +29,8 @@ const Register = () => {
 
     try {
       await dispatch(register({ name, email, password })).unwrap();
+      // Clear any auth state to avoid redirecting to home
+      dispatch(logout());
       toast.success('Account created successfully! Please login to continue.');
       // Clear token and user data so user has to login manually
       localStorage.removeItem('token');
