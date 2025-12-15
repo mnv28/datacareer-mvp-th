@@ -12,44 +12,78 @@ const PaymentSuccess: React.FC = () => {
 
   useEffect(() => {
     const handlePaymentSuccess = async () => {
-      // Wait a bit for webhook to process
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-      // Try to fetch updated user from backend first (so it won't be overwritten on next login)
-      try {
-        const resp = await apiInstance.get('/api/auth/check-trial-status');
-        const updatedUser = resp.data?.user;
-        const updatedTrialStatus = resp.data?.trialStatus;
-        const updatedDays = resp.data?.trialDaysRemaining;
+      const isPaid = (u: any, status?: any) => {
+        const sub = (u?.subscriptionStatus || '').toString().toLowerCase();
+        return u?.paymentDone === true || sub === 'active' || sub === 'trialing' || sub === 'trial' || status === 'paid';
+      };
 
-        dispatch(updateTrialStatus({
-          trialStatus: updatedTrialStatus || 'paid',
-          trialDaysRemaining: updatedDays ?? null,
-          user: updatedUser || undefined,
-        }));
+      // Webhook delay ho sakta hai, isliye thoda retry/poll karte hai
+      const maxAttempts = 8; // ~12s total (with 1500ms delay)
+      let lastResp: any = null;
 
-        if (updatedUser) {
-          localStorage.setItem('user', JSON.stringify(updatedUser));
-        }
-      } catch (error) {
-        // Fallback: optimistic local update
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
         try {
-          const userStr = localStorage.getItem('user');
-          if (userStr) {
-            const user = JSON.parse(userStr);
-            user.paymentDone = true;
-            user.subscriptionStatus = 'active';
-            localStorage.setItem('user', JSON.stringify(user));
-            dispatch(updateTrialStatus({ trialStatus: 'paid', trialDaysRemaining: null, user }));
+          const resp = await apiInstance.get('/api/auth/check-trial-status');
+          lastResp = resp?.data;
+
+          const updatedUser = resp.data?.user;
+          const updatedTrialStatus = resp.data?.trialStatus;
+          const updatedDays = resp.data?.trialDaysRemaining;
+
+          if (isPaid(updatedUser, updatedTrialStatus)) {
+            // Paid confirmed -> update Redux + localStorage
+            if (updatedUser) {
+              try {
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+              } catch {
+                // ignore
+              }
+            }
+
+            dispatch(updateTrialStatus({
+              trialStatus: updatedTrialStatus || 'paid',
+              trialDaysRemaining: updatedDays ?? null,
+              user: updatedUser || undefined,
+            }));
+
+            toast.success('Payment successful! Your subscription is now active.');
+            window.location.href = '/';
+            return;
           }
         } catch {
-          // ignore
+          // ignore and retry
+        }
+
+        // wait before next attempt (except after last)
+        if (attempt < maxAttempts - 1) {
+          await sleep(1500);
         }
       }
 
-      toast.success('Payment successful! Your subscription is now active.');
-      
-      // Force page reload to reinitialize Redux state from localStorage
+      // Webhook delay / stale backend response: we're on success page, so optimistically unlock UI.
+      // This prevents modal + "Upgrade to Pro" from showing after Stripe return.
+      try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          user.paymentDone = true;
+          user.subscriptionStatus = 'active';
+          user.planType = 'premium';
+          localStorage.setItem('user', JSON.stringify(user));
+          dispatch(updateTrialStatus({ trialStatus: 'paid', trialDaysRemaining: null, user }));
+        } else {
+          // If no user in storage, still mark plan as paid in Redux so UI unlocks this session
+          dispatch(updateTrialStatus({ trialStatus: 'paid', trialDaysRemaining: null }));
+        }
+      } catch {
+        // ignore
+        dispatch(updateTrialStatus({ trialStatus: 'paid', trialDaysRemaining: null }));
+      }
+
+      const msg = lastResp?.message || 'Payment received. Activating your subscription...';
+      toast.success(msg);
       window.location.href = '/';
     };
 

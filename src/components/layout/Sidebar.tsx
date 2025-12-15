@@ -41,8 +41,31 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
   const { user, trialStatus } = useAppSelector((state) => state.auth);
 
+  // Read user from localStorage (fresher data after payment success, like ProtectedRoute)
+  const readUserFromStorage = () => {
+    try {
+      const raw = localStorage.getItem('user');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Prefer freshest user data (localStorage may be newer than Redux after payment success)
+  const userFromStorage = readUserFromStorage();
+  const effectiveUser = userFromStorage || user;
+
+  // Check if user has active subscription (same logic as ProtectedRoute)
+  const subscriptionStatus = (effectiveUser?.subscriptionStatus || '').toString().toLowerCase();
+  const hasActiveSubscription =
+    effectiveUser?.paymentDone === true ||
+    trialStatus === 'paid' ||
+    subscriptionStatus === 'active' ||
+    subscriptionStatus === 'trialing' ||
+    subscriptionStatus === 'trial';
+
   // Determine user plan based on payment status
-  const userPlan = user?.paymentDone || trialStatus === 'paid' ? 'premium' : 'free';
+  const userPlan = hasActiveSubscription ? 'premium' : 'free';
 
   const handleLogout = async () => {
     try {
