@@ -611,6 +611,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                   Posted Date
                 </label>
+            
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
