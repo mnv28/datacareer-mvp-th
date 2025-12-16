@@ -107,10 +107,10 @@ const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({ open, onPaymentSu
       >
         <DialogHeader className="text-center">
           <DialogTitle className="text-2xl font-bold text-gray-900">
-            Trial Period Expired
+            Your free trial has ended
           </DialogTitle>
           <DialogDescription className="text-base pt-2 text-gray-600">
-            Your 7-day free trial has ended. Subscribe now to continue accessing all features.
+            Thanks for trying DataCareer. Upgrade to Pro to continue practicing with full access.
           </DialogDescription>
         </DialogHeader>
 
@@ -118,7 +118,7 @@ const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({ open, onPaymentSu
           <div className="bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 p-6 rounded-2xl mb-6 shadow-xl border border-blue-400">
             <div className="flex items-center justify-between text-white">
               <div>
-                <p className="text-sm font-semibold opacity-90 mb-2 tracking-wide uppercase">Monthly Subscription</p>
+                <p className="text-sm font-semibold opacity-90 mb-2 tracking-wide uppercase">Pro Monthly</p>
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-bold">$4.90</span>
                   <span className="text-lg font-medium opacity-90">/month</span>
@@ -164,7 +164,7 @@ const TrialExpiredModal: React.FC<TrialExpiredModalProps> = ({ open, onPaymentSu
             </div>
 
             <p className="text-xs text-gray-500 text-center leading-relaxed">
-              Your subscription will auto-renew monthly. You can cancel anytime from your account settings.
+              Secure payment via Stripe. Subscription auto-renews monthly — cancel anytime from Account Settings.
             </p>
           </div>
         </div>

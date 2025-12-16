@@ -7,7 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ChevronDown, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { paymentService } from "@/redux/services/payment";
+import { ChevronDown, CheckCircle2, XCircle, MinusCircle, AlertTriangle, CreditCard, Loader2 } from 'lucide-react';
 import { Company, Question } from "@/components/questions/QuestionList"; // Import types
 import { apiInstance } from "@/api/axiosApi";
 import { useAppSelector } from '@/redux/hooks';
@@ -203,6 +206,7 @@ function Index() {
   const [loadingProgress, setLoadingProgress] = useState(true);
   const [errorProgress, setErrorProgress] = useState<string | null>(null);
   const [deviceTrialError, setDeviceTrialError] = useState<string | null>(null);
+  const [isUpgradingFromBanner, setIsUpgradingFromBanner] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
@@ -308,16 +312,16 @@ function Index() {
                 rawPaid === 'true';
 
               return ({
-              id: question.id,
-              title: question.title,
-              type: question.dbType,
-              difficulty: (question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1)) as 'Beginner' | 'Intermediate' | 'Advanced',
-              status: 'mismatch' as 'Solved' | 'Wrong' | 'mismatch',
-              topic: {
-                id: question.Topic?.id || 0,
-                name: question.Topic?.name || question.topic
-              },
-              isPaid
+                id: question.id,
+                title: question.title,
+                type: question.dbType,
+                difficulty: (question.difficulty.charAt(0).toUpperCase() + question.difficulty.slice(1)) as 'Beginner' | 'Intermediate' | 'Advanced',
+                status: 'mismatch' as 'Solved' | 'Wrong' | 'mismatch',
+                topic: {
+                  id: question.Topic?.id || 0,
+                  name: question.Topic?.name || question.topic
+                },
+                isPaid
               });
             }),
         }));
@@ -331,7 +335,7 @@ function Index() {
           // Specific UX message for device-based trial restriction
           if (backendMsg.toLowerCase().includes('used on this device')) {
             setDeviceTrialError(
-              'Your free trial has already been used on this device.\nTo continue accessing all features, please upgrade using the option in the sidebar.'
+              'Your free trial has already been used on this device.\nTo continue accessing all features, try upgrading to a premium plan.'
             );
             setErrorCompanies(null);
           } else {
@@ -360,7 +364,7 @@ function Index() {
           const backendMsg = (e.response.data?.message || '').toString();
           if (backendMsg.toLowerCase().includes('used on this device')) {
             setDeviceTrialError(
-              'Your free trial has already been used on this device.\nTo continue accessing all features, please upgrade using the option in the sidebar.'
+              'Your free trial has already been used on this device.\nTo continue accessing all features, try upgrading to a premium plan.'
             );
             setErrorProgress(null);
           } else {
@@ -451,66 +455,62 @@ function Index() {
     setSelectedDifficulties([]);
     setSelectedVariants([]);
   };
-  
-const handleApplyFilters = (filters) => {
-  setSearchQuery(filters.searchQuery);
-  setSelectedCompanies(filters.selectedCompanies);
-  setSelectedTopics(filters.selectedTopics);
-  setSelectedDomains(filters.selectedDomains);
-  setSelectedDifficulties(filters.selectedDifficulties);
-  setSelectedVariants(filters.selectedVariants);
-};
+
+  const handleUpgradeFromBanner = async () => {
+    setIsUpgradingFromBanner(true);
+    try {
+      const resp = await paymentService.createCheckoutSession();
+      if (resp.success && resp.url) {
+        window.location.href = resp.url;
+        return;
+      }
+      throw new Error('Failed to start checkout');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to start checkout. Please try again.');
+      setIsUpgradingFromBanner(false);
+    }
+  };
+
+  const handleApplyFilters = (filters) => {
+    setSearchQuery(filters.searchQuery);
+    setSelectedCompanies(filters.selectedCompanies);
+    setSelectedTopics(filters.selectedTopics);
+    setSelectedDomains(filters.selectedDomains);
+    setSelectedDifficulties(filters.selectedDifficulties);
+    setSelectedVariants(filters.selectedVariants);
+  };
 
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col gap-2 justify-between items-center sm:flex-row">
           <div>
-          <h1 className="text-2xl font-bold text-datacareer-darkBlue mb-2">SQL Interview Questions</h1>
+            <h1 className="text-2xl font-bold text-datacareer-darkBlue mb-2">SQL Interview Questions</h1>
             <p className="text-gray-600">
               Practice SQL interview questions from top tech companies
             </p>
           </div>
 
-        {!deviceTrialError && trialStatus === 'trial-active' && (() => {
-          const info = getTrialInfo();
-          if (!info) return null;
-          return (
-            <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <p className="text-blue-900 font-medium">
-                  Trial Active
-                </p>
-                <p className="text-sm text-blue-800">
-                  Remaining: <span className="font-semibold">{info.remaining}</span> days
-                  {' '}• Used: <span className="font-semibold">{info.used}/{info.total}</span> days
-                </p>
+          {!deviceTrialError && trialStatus === 'trial-active' && (() => {
+            const info = getTrialInfo();
+            if (!info) return null;
+            return (
+              <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <p className="text-blue-900 font-medium">
+                    Trial Active
+                  </p>
+                  <p className="text-sm text-blue-800">
+                    Remaining: <span className="font-semibold">{info.remaining}</span> days
+                    {' '}• Used: <span className="font-semibold">{info.used}/{info.total}</span> days
+                  </p>
+                </div>
               </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
         </div>
 
-
-        {deviceTrialError && (
-          <div className="mb-6 rounded-lg border border-yellow-300 bg-yellow-50 p-4">
-            <p className="text-yellow-800 font-medium whitespace-pre-line">
-              {deviceTrialError}
-            </p>
-            {(() => {
-              const info = getTrialInfo();
-              if (!info) return null;
-              return (
-                <p className="mt-2 text-sm text-yellow-700">
-                  Trial used: <span className="font-semibold">{info.used}/{info.total}</span> days
-                  {' '}• Remaining: <span className="font-semibold">{info.remaining}</span> days
-                </p>
-              );
-            })()}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-4">
           <div className="lg:col-span-3">
             <FilterBar
               searchQuery={searchQuery}
@@ -528,6 +528,69 @@ const handleApplyFilters = (filters) => {
               onClearAll={handleClearAll}
               onApply={handleApplyFilters}
             />
+
+            {deviceTrialError && (
+              <div className="mb-6 rounded-2xl border border-yellow-200 bg-gradient-to-b from-yellow-50 to-white p-4 sm:p-5 shadow-sm">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-yellow-200 bg-yellow-100">
+                      <AlertTriangle className="h-5 w-5 text-yellow-800" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="text-sm sm:text-base font-semibold text-yellow-900">
+                        Trial limit reached
+                      </p>
+                      <p className="mt-1 text-sm text-yellow-800 whitespace-pre-line">
+                        {deviceTrialError}
+                      </p>
+
+                      {(() => {
+                        const info = getTrialInfo();
+                        if (!info) return null;
+                        return (
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                            <span className="inline-flex items-center rounded-full border border-yellow-200 bg-white px-3 py-1 text-yellow-900">
+                              <span className="text-yellow-700 mr-1">Used</span>
+                              <span className="font-semibold">{info.used}/{info.total}</span>
+                              <span className="text-yellow-700 ml-1">days</span>
+                            </span>
+                            <span className="inline-flex items-center rounded-full border border-yellow-200 bg-white px-3 py-1 text-yellow-900">
+                              <span className="text-yellow-700 mr-1">Remaining</span>
+                              <span className="font-semibold">{info.remaining}</span>
+                              <span className="text-yellow-700 ml-1">days</span>
+                            </span>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:items-end">
+                    <Button
+                      onClick={handleUpgradeFromBanner}
+                      disabled={isUpgradingFromBanner}
+                      className="bg-datacareer-blue hover:bg-datacareer-darkBlue w-full sm:w-auto"
+                    >
+                      {isUpgradingFromBanner ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Redirecting…
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="mr-2 h-4 w-4" />
+                          Upgrade to Pro
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-yellow-700">
+                      Secure payment via Stripe • $4.90/month
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {loadingCompanies && <p>Loading companies...</p>}
             {!deviceTrialError && errorCompanies && (

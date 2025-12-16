@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { updateTrialStatus } from '@/redux/slices/authSlice';
 import TrialExpiredModal from '@/components/payment/TrialExpiredModal';
+import TrialStartModal from '@/components/payment/TrialStartModal';
 import { toast } from 'sonner';
 import { apiInstance } from '@/api/axiosApi';
 
@@ -171,6 +172,55 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
             setTimeout(() => {
               window.location.reload();
             }, 1500);
+          }}
+        />
+      </>
+    );
+  }
+
+  // First-time login: no trial started yet → force user to activate trial (or subscribe)
+  if (!isCheckingTrial && currentTrialStatus === 'no-trial' && !hasActiveSubscription) {
+    return (
+      <>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center p-8 max-w-xl">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Start your free trial</h2>
+            <p className="text-gray-600">
+              To continue, please activate your 7-day free trial. You can upgrade to Pro anytime.
+            </p>
+          </div>
+        </div>
+        <TrialStartModal
+          open={true}
+          onActivated={({ user: updatedUser, trialStatus: updatedTrialStatus, trialDaysRemaining: updatedDays }) => {
+            try {
+              if (updatedUser) {
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+              } else {
+                // If backend doesn't return user, at least mark trialStart locally to avoid looping UI.
+                const raw = localStorage.getItem('user');
+                if (raw) {
+                  const u = JSON.parse(raw);
+                  if (!u.trialStart) u.trialStart = new Date().toISOString();
+                  localStorage.setItem('user', JSON.stringify(u));
+                  updatedUser = u;
+                }
+              }
+            } catch {
+              // ignore
+            }
+
+            dispatch(
+              updateTrialStatus({
+                trialStatus: (updatedTrialStatus || 'trial-active') as any,
+                trialDaysRemaining: updatedDays ?? null,
+                user: updatedUser,
+              })
+            );
+
+            setCurrentTrialStatus((updatedTrialStatus || 'trial-active') as any);
+            setIsCheckingTrial(false);
+            toast.success('Trial activated. Enjoy!');
           }}
         />
       </>

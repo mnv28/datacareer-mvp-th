@@ -12,6 +12,8 @@ import Index from '@/pages/Index';
 import QuestionDetail from '@/pages/QuestionDetail';
 import JobDatabase from '@/pages/JobDatabase';
 import SubscriptionSettings from '@/pages/SubscriptionSettings';
+import SettingsProfile from '@/pages/SettingsProfile';
+import SettingsPassword from '@/pages/SettingsPassword';
 import PaymentSuccess from '@/pages/payment/PaymentSuccess';
 import PaymentCancel from '@/pages/payment/PaymentCancel';
 import { store } from './redux/store';
@@ -63,6 +65,22 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <SubscriptionSettings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings/profile"
+              element={
+                <ProtectedRoute>
+                  <SettingsProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings/password"
+              element={
+                <ProtectedRoute>
+                  <SettingsPassword />
                 </ProtectedRoute>
               }
             />
