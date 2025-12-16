@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,9 @@ const TRIAL_DAYS = 7;
 const SubscriptionSettings: React.FC = () => {
   const { user, trialStatus, trialDaysRemaining } = useAppSelector((state) => state.auth);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [billingStart, setBillingStart] = useState<string | null>(null);
+  const [billingEnd, setBillingEnd] = useState<string | null>(null);
+  const [isLoadingBilling, setIsLoadingBilling] = useState(false);
 
   const subscriptionStatus = (user?.subscriptionStatus || '').toString().toLowerCase();
   const isPro =
@@ -54,6 +57,39 @@ const SubscriptionSettings: React.FC = () => {
 
   const planLabel = isPro ? 'Pro' : (trialStatus === 'trial-active' ? 'Trial' : 'Free');
 
+  useEffect(() => {
+    if (!isPro) return;
+
+    let isMounted = true;
+    setIsLoadingBilling(true);
+
+    (async () => {
+      try {
+        const resp = await paymentService.getSubscriptionStatus();
+        if (!isMounted) return;
+        setBillingStart(resp?.subscription?.startDate ?? null);
+        setBillingEnd(resp?.subscription?.endDate ?? null);
+      } catch {
+        if (!isMounted) return;
+        setBillingStart(null);
+        setBillingEnd(null);
+      } finally {
+        if (isMounted) setIsLoadingBilling(false);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isPro]);
+
+  const formatDate = (value: string | null) => {
+    if (!value) return '—';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '—';
+    return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: '2-digit' }).format(d);
+  };
+
   const handleSubscribe = async () => {
     setIsSubmitting(true);
     try {
@@ -67,11 +103,6 @@ const SubscriptionSettings: React.FC = () => {
       toast.error(e?.message || 'Failed to start checkout. Please try again.');
       setIsSubmitting(false);
     }
-  };
-
-  const handleManageBilling = () => {
-    // UI placeholder (backend portal session endpoint not implemented in this frontend)
-    toast.message('Manage billing is coming soon.');
   };
 
   return (
@@ -123,6 +154,19 @@ const SubscriptionSettings: React.FC = () => {
                   </div>
                 </div>
 
+                {isPro && (
+                  <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 text-sm">
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                      <p className="text-xs font-medium text-gray-600">Start date</p>
+                      <p className="font-semibold text-gray-900">{isLoadingBilling ? 'Loading…' : formatDate(billingStart)}</p>
+                    </div>
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                      <p className="text-xs font-medium text-gray-600">End date</p>
+                      <p className="font-semibold text-gray-900">{isLoadingBilling ? 'Loading…' : formatDate(billingEnd)}</p>
+                    </div>
+                  </div>
+                )}
+
                 {trialInfo && !isPro && (
                   <div className="mt-4">
                     <div className="flex items-center justify-between text-sm text-gray-700">
@@ -143,8 +187,8 @@ const SubscriptionSettings: React.FC = () => {
                   <div><span className="font-medium text-gray-800">Status:</span> {(user?.subscriptionStatus || trialStatus || 'unknown').toString()}</div>
                   <div><span className="font-medium text-gray-800">Plan type:</span> {(user?.planType || (isPro ? 'premium' : 'trial')).toString()}</div>
                 </div>
-                <div className="flex gap-2">
-                  {!isPro ? (
+                {!isPro ? (
+                  <div className="flex gap-2">
                     <Button onClick={handleSubscribe} disabled={isSubmitting} className="bg-datacareer-blue hover:bg-datacareer-darkBlue">
                       {isSubmitting ? (
                         <>
@@ -158,50 +202,8 @@ const SubscriptionSettings: React.FC = () => {
                         </>
                       )}
                     </Button>
-                  ) : (
-                    <Button variant="outline" onClick={handleManageBilling}>
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Manage Billing
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-gray-200">
-            <CardHeader>
-              <CardTitle>Billing & Help</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <p className="text-sm font-medium text-gray-900">Need to change your plan?</p>
-                <p className="mt-1 text-sm text-gray-600">
-                  If your subscription is active, you can manage billing here (portal coming soon). If you’re on trial/free, use Subscribe.
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-gray-200 bg-white p-4">
-                <p className="text-sm font-medium text-gray-900">Support</p>
-                <p className="mt-1 text-sm text-gray-600">Having issues with access after payment? We can help you verify your subscription.</p>
-                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      window.location.href = 'mailto:support@datacareer.com?subject=Subscription%20Help';
-                    }}
-                  >
-                    Contact Support
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      toast.message('Tip: After payment, refresh once if webhook is delayed.');
-                    }}
-                  >
-                    Troubleshooting
-                  </Button>
-                </div>
+                  </div>
+                ) : null}
               </div>
             </CardContent>
           </Card>

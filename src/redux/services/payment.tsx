@@ -6,6 +6,17 @@ interface CreateCheckoutSessionResponse {
   url: string;
 }
 
+interface SubscriptionStatusResponse {
+  success: boolean;
+  subscription: {
+    status: string | null;
+    planType: string | null;
+    startDate: string | null;
+    endDate: string | null;
+    subscriptionId: string | null;
+  };
+}
+
 export const paymentService = {
   /**
    * Create Stripe checkout session for monthly subscription
@@ -52,6 +63,47 @@ export const paymentService = {
         throw error;
       }
       throw new Error('Failed to create checkout session. Please try again.');
+    }
+  },
+
+  /**
+   * Fetch subscription status + billing period (from Stripe/DB)
+   */
+  getSubscriptionStatus: async (): Promise<SubscriptionStatusResponse> => {
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Authentication required. Please login to continue.');
+      }
+
+      const response = await apiInstance.get<SubscriptionStatusResponse>(
+        '/api/payment/subscription-status'
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        throw new Error('Session expired. Please login again.');
+      }
+      if (error.response?.status === 403) {
+        const errorMessage = error.response?.data?.message
+          || error.response?.data?.error
+          || 'Access denied. You do not have permission to perform this action.';
+        throw new Error(errorMessage);
+      }
+      if (error.response?.status === 500) {
+        throw new Error('Server error. Please contact support.');
+      }
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      if (error.message) {
+        throw error;
+      }
+      throw new Error('Failed to load subscription status. Please try again.');
     }
   },
 };
