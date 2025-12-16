@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
@@ -54,8 +53,6 @@ const SubscriptionSettings: React.FC = () => {
 
     return null;
   }, [trialDaysRemaining, user]);
-
-  const planLabel = isPro ? 'Pro' : (trialStatus === 'trial-active' ? 'Trial' : 'Free');
 
   useEffect(() => {
     if (!isPro) return;
@@ -114,14 +111,6 @@ const SubscriptionSettings: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-datacareer-darkBlue">Manage Subscription</h1>
             <p className="text-sm text-gray-600">View your plan, trial, and billing options.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className={isPro ? 'border-green-200 bg-green-50 text-green-700' : 'border-blue-200 bg-blue-50 text-blue-700'}>
-              {planLabel}
-            </Badge>
-            <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-700">
-              {(user?.email || '').toString() || '—'}
-            </Badge>
           </div>
         </div>
 
@@ -186,8 +175,8 @@ const SubscriptionSettings: React.FC = () => {
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm text-gray-600">
-                  <div><span className="font-medium text-gray-800">Status:</span> {(user?.subscriptionStatus || trialStatus || 'unknown').toString()}</div>
-                  <div><span className="font-medium text-gray-800">Plan type:</span> {(user?.planType || (isPro ? 'premium' : 'trial')).toString()}</div>
+                  <div className="capitalize"><span className="font-medium text-gray-800 capitalize">Status:</span> {(user?.subscriptionStatus || trialStatus || 'unknown').toString()}</div>
+                  <div className="capitalize"><span className="font-medium text-gray-800 capitalize">Plan type:</span> {(user?.planType || (isPro ? 'premium' : 'trial')).toString()}</div>
                 </div>
                 {!isPro ? (
                   <div className="flex gap-2">
