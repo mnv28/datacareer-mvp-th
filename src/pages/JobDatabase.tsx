@@ -56,7 +56,7 @@ const JobDatabase: React.FC = () => {
       if (r?.role_cat) details.push(String(r.role_cat));
       if (r?.exp_level) details.push(String(r.exp_level));
       if (r?.location_type) details.push(String(r.location_type));
-      if (r?.sec_clearance) details.push('Clearance');
+      if (r?.sec_clearance && r.sec_clearance !== '0') details.push('Clearance');
       return {
         id: idx + 1,
         apiId: r?.id || '',
@@ -74,6 +74,14 @@ const JobDatabase: React.FC = () => {
         func: r?.function || '',
         industry: r?.industry || '',
         otherDetails: details,
+        // Store original API fields for saving jobs properly
+        role_cat: r?.role_cat || undefined,
+        exp_level: r?.exp_level || undefined,
+        sec_clearance: r?.sec_clearance || undefined,
+        pr_citizenship_req: r?.pr_citizenship_req || undefined,
+        location_type: r?.location_type || undefined,
+        city: r?.city || undefined,
+        state: r?.state || undefined,
       };
     });
   };
@@ -96,11 +104,29 @@ const JobDatabase: React.FC = () => {
         }
       }
       
-      const details: string[] = [];
-      if (jobData?.role_cat) details.push(String(jobData.role_cat));
-      if (jobData?.exp_level) details.push(String(jobData.exp_level));
-      if (jobData?.location_type) details.push(String(jobData.location_type));
-      if (jobData?.sec_clearance && jobData.sec_clearance !== '0') details.push('Clearance');
+      // Use other_details from API if available, otherwise build from individual fields
+      let details: string[] = [];
+      if (r?.other_details && Array.isArray(r.other_details)) {
+        // Use the other_details array directly from the saved job response
+        details = r.other_details.map((d: any) => String(d));
+      } else if (jobData?.other_details && Array.isArray(jobData.other_details)) {
+        // Fallback to jobData.other_details if it exists
+        details = jobData.other_details.map((d: any) => String(d));
+      } else {
+        // Fallback: build from individual fields (for backward compatibility)
+        if (jobData?.role_cat) details.push(String(jobData.role_cat));
+        if (jobData?.exp_level) details.push(String(jobData.exp_level));
+        if (jobData?.location_type) details.push(String(jobData.location_type));
+        if (jobData?.sec_clearance && jobData.sec_clearance !== '0') details.push('Clearance');
+        // Also check top-level r for these fields
+        if (!details.length) {
+          if (r?.role_cat) details.push(String(r.role_cat));
+          if (r?.exp_level) details.push(String(r.exp_level));
+          if (r?.location_type) details.push(String(r.location_type));
+          if (r?.sec_clearance && r.sec_clearance !== '0') details.push('Clearance');
+        }
+      }
+      
       return {
         id: idx + 1,
         apiId: r?.job_id || jobData?.id || r?.id || '',
@@ -108,17 +134,25 @@ const JobDatabase: React.FC = () => {
         postedDate: dateObj,
         postedDateValue: dateObj,
         company: {
-          title: jobData?.job_title || '',
-          name: jobData?.company_name || '',
-          location: jobData?.location || [jobData?.city, jobData?.state].filter(Boolean).join(', '),
+          title: jobData?.job_title || r?.job_title || '',
+          name: jobData?.company_name || r?.company_name || '',
+          location: jobData?.location || r?.location || [jobData?.city || r?.city, jobData?.state || r?.state].filter(Boolean).join(', '),
         },
-        topTechSkill: jobData?.top_tech_skills || '',
+        topTechSkill: jobData?.top_tech_skills || r?.top_tech_skills || '',
         // ensure both keys exist so components reading either will work
-        function: jobData?.function || '',
-        func: jobData?.function || '',
-        industry: jobData?.industry || '',
+        function: jobData?.function || r?.function || '',
+        func: jobData?.function || r?.function || '',
+        industry: jobData?.industry || r?.industry || '',
         otherDetails: details,
         status: r?.status, // status comes from the saved job record, not the job object
+        // Store original API fields for saving jobs properly
+        role_cat: jobData?.role_cat || r?.role_cat || undefined,
+        exp_level: jobData?.exp_level || r?.exp_level || undefined,
+        sec_clearance: jobData?.sec_clearance || r?.sec_clearance || undefined,
+        pr_citizenship_req: jobData?.pr_citizenship_req || r?.pr_citizenship_req || undefined,
+        location_type: jobData?.location_type || r?.location_type || undefined,
+        city: jobData?.city || r?.city || undefined,
+        state: jobData?.state || r?.state || undefined,
       };
     });
   };

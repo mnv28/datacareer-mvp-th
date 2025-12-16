@@ -23,6 +23,12 @@ dist-ssr/
 *.sln
 *.sw?
 
+<<<<<<< HEAD
+
+.env
+/env
+/.env
+=======
 # Mac / Linux system files
 .DS_Store
 Thumbs.db
@@ -36,3 +42,4 @@ Thumbs.db
 # package-lock.json
 # yarn.lock
 # pnpm-lock.yaml
+>>>>>>> origin/jobdatabase-dev

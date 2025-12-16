@@ -12,6 +12,7 @@ import { Company, Question } from "@/components/questions/QuestionList"; // Impo
 import { apiInstance } from "@/api/axiosApi";
 import { useAppSelector } from '@/redux/hooks';
 
+// Post Job DB
 
 // Define types based on the expected data structure after fetching and transformation
 // interface Domain {
