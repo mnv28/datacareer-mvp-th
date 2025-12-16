@@ -12,8 +12,12 @@ interface SubscriptionStatusResponse {
     status: string | null;
     planType: string | null;
     startDate: string | null;
-    endDate: string | null;
+    // Backward/forward compatible fields from backend
+    endDate?: string | null;
+    renewsOn?: string | null;
+    endsOn?: string | null;
     subscriptionId: string | null;
+    isTrial?: boolean | null;
   };
 }
 

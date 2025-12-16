@@ -67,8 +67,10 @@ const SubscriptionSettings: React.FC = () => {
       try {
         const resp = await paymentService.getSubscriptionStatus();
         if (!isMounted) return;
-        setBillingStart(resp?.subscription?.startDate ?? null);
-        setBillingEnd(resp?.subscription?.endDate ?? null);
+        const sub = resp?.subscription;
+        setBillingStart(sub?.startDate ?? null);
+        // Use renewsOn as the "end/next billing" date (per backend)
+        setBillingEnd((sub as any)?.renewsOn ?? (sub as any)?.endDate ?? (sub as any)?.endsOn ?? null);
       } catch {
         if (!isMounted) return;
         setBillingStart(null);
@@ -161,7 +163,7 @@ const SubscriptionSettings: React.FC = () => {
                       <p className="font-semibold text-gray-900">{isLoadingBilling ? 'Loading…' : formatDate(billingStart)}</p>
                     </div>
                     <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-                      <p className="text-xs font-medium text-gray-600">End date</p>
+                      <p className="text-xs font-medium text-gray-600">Renews on</p>
                       <p className="font-semibold text-gray-900">{isLoadingBilling ? 'Loading…' : formatDate(billingEnd)}</p>
                     </div>
                   </div>
