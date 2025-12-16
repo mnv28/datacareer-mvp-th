@@ -52,7 +52,7 @@ const TrialStartModal: React.FC<TrialStartModalProps> = ({ open, onActivated }) 
             <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 text-sm">
               <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <span>Access all questions & solutions</span>
+                <span>Access all questions & jobdatabase</span>
               </div>
               <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                 <ShieldCheck className="h-4 w-4 text-green-600" />
