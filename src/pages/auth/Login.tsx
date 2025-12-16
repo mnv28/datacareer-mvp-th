@@ -74,7 +74,7 @@ const Login = () => {
       } else if (errorMessage === 'trial-expired' || errorMessage.includes('Trial expired')) {
         toast.error('Your trial has expired. Please purchase a subscription to continue.');
         // Still navigate to home, ProtectedRoute will show modal
-        navigate('/');
+      navigate('/');
       } else if (errorMessage.includes('Device ID is required')) {
         toast.error('Device ID is required. Please refresh the page and try again.');
       } else {

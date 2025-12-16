@@ -265,6 +265,15 @@ function Index() {
 
         const data = response.data;
 
+        // Backend currently returns `isPaid` at top-level (user plan/access flag),
+        // while `QuestionList` expects `question.isPaid` for the Paid/Free badge.
+        const userIsPaidFlagRaw = (data as any)?.isPaid;
+        const userIsPaidFlag =
+          userIsPaidFlagRaw === true ||
+          userIsPaidFlagRaw === 1 ||
+          userIsPaidFlagRaw === '1' ||
+          (typeof userIsPaidFlagRaw === 'string' && userIsPaidFlagRaw.trim().toLowerCase() === 'true');
+
         const transformedCompanies: Company[] = data.companies.map((company) => ({
           id: company.id,
           name: company.name,
@@ -282,10 +291,16 @@ function Index() {
               return order[diffA] - order[diffB];
             })
             .map((question) => {
-              const rawPaid =
+              let rawPaid =
                 (question as any).isPaid ??
                 (question as any).paid ??
                 (question as any).is_paid;
+
+              // Fallback: if API doesn't include per-question paid flag, use top-level `data.isPaid`
+              // so UI doesn't incorrectly show "Free" for paid users.
+              if (rawPaid === undefined || rawPaid === null) {
+                rawPaid = userIsPaidFlag;
+              }
               const isPaid =
                 rawPaid === true ||
                 rawPaid === 1 ||
