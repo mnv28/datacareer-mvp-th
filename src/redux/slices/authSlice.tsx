@@ -39,6 +39,25 @@ const getInitialUser = (): User | null => {
   return null;
 };
 
+const getInitialTrialDaysRemaining = (): number | null => {
+  try {
+    const raw = localStorage.getItem('trialDaysRemaining');
+    if (raw === null || raw === undefined || raw === '') return null;
+    const val = JSON.parse(raw);
+    return typeof val === 'number' ? val : null;
+  } catch {
+    return null;
+  }
+};
+
+const getInitialStoredTrialStatus = (): AuthState['trialStatus'] | undefined => {
+  const raw = localStorage.getItem('trialStatus');
+  if (!raw) return undefined;
+  const val = raw.toString();
+  if (val === 'paid' || val === 'trial-active' || val === 'trial-expired' || val === 'no-trial') return val;
+  return undefined;
+};
+
 // Derive trial status from user data
 const getInitialTrialStatus = (user: User | null): 'paid' | 'trial-active' | 'trial-expired' | 'no-trial' | undefined => {
   if (!user) return undefined;
@@ -63,13 +82,15 @@ const getInitialTrialStatus = (user: User | null): 'paid' | 'trial-active' | 'tr
 };
 
 const initialUser = getInitialUser();
+const initialTrialDaysRemaining = getInitialTrialDaysRemaining();
+const initialTrialStatus = getInitialStoredTrialStatus() || getInitialTrialStatus(initialUser);
 const initialState: AuthState = {
   user: initialUser,
   token: localStorage.getItem('token'),
   isLoading: false,
   error: null,
-  trialStatus: getInitialTrialStatus(initialUser),
-  trialDaysRemaining: null,
+  trialStatus: initialTrialStatus,
+  trialDaysRemaining: initialTrialDaysRemaining,
 };
 
 export const login = createAsyncThunk(
@@ -79,6 +100,10 @@ export const login = createAsyncThunk(
       const response = await authService.login(credentials);
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
+      if (response.trialStatus) {
+        localStorage.setItem('trialStatus', response.trialStatus);
+      }
+      localStorage.setItem('trialDaysRemaining', JSON.stringify(response.trialDaysRemaining ?? null));
       return response;
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -96,6 +121,10 @@ export const register = createAsyncThunk(
       const response = await authService.register(userData);
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
+      if (response.trialStatus) {
+        localStorage.setItem('trialStatus', response.trialStatus);
+      }
+      localStorage.setItem('trialDaysRemaining', JSON.stringify(response.trialDaysRemaining ?? null));
       return response;
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -115,6 +144,12 @@ const authSlice = createSlice({
       state.token = null;
       state.trialStatus = undefined;
       state.trialDaysRemaining = null;
+      try {
+        localStorage.removeItem('trialStatus');
+        localStorage.removeItem('trialDaysRemaining');
+      } catch {
+        // ignore
+      }
       authService.logout();
     },
     clearError: (state) => {
@@ -123,12 +158,27 @@ const authSlice = createSlice({
     updateTrialStatus: (state, action) => {
       if (action.payload.trialStatus) {
         state.trialStatus = action.payload.trialStatus;
+        try {
+          localStorage.setItem('trialStatus', action.payload.trialStatus);
+        } catch {
+          // ignore
+        }
       }
       if (action.payload.trialDaysRemaining !== undefined) {
         state.trialDaysRemaining = action.payload.trialDaysRemaining;
+        try {
+          localStorage.setItem('trialDaysRemaining', JSON.stringify(action.payload.trialDaysRemaining));
+        } catch {
+          // ignore
+        }
       }
       if (action.payload.user) {
         state.user = action.payload.user;
+        try {
+          localStorage.setItem('user', JSON.stringify(action.payload.user));
+        } catch {
+          // ignore
+        }
       }
     },
   },

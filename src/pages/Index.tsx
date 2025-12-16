@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { ChevronDown, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
 import { Company, Question } from "@/components/questions/QuestionList"; // Import types
 import { apiInstance } from "@/api/axiosApi";
+import { useAppSelector } from '@/redux/hooks';
 
 
 // Define types based on the expected data structure after fetching and transformation
@@ -181,6 +182,8 @@ import { apiInstance } from "@/api/axiosApi";
 function Index() {
   const [companies, setCompanies] = useState<Company[]>([]);
 
+  const { user, trialDaysRemaining, trialStatus } = useAppSelector((state) => state.auth);
+
   const [loadingCompanies, setLoadingCompanies] = useState(true);
   const [errorCompanies, setErrorCompanies] = useState<string | null>(null);
 
@@ -198,6 +201,7 @@ function Index() {
   });
   const [loadingProgress, setLoadingProgress] = useState(true);
   const [errorProgress, setErrorProgress] = useState<string | null>(null);
+  const [deviceTrialError, setDeviceTrialError] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
@@ -205,6 +209,43 @@ function Index() {
   const [selectedDomains, setSelectedDomains] = useState<number[]>([]);
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
   const [selectedVariants, setSelectedVariants] = useState<string[]>([]);
+
+  const getTrialInfo = () => {
+    const TRIAL_DAYS = 7;
+    const msPerDay = 1000 * 60 * 60 * 24;
+
+    // If device is blocked due to trial already used on this device, show full trial used.
+    if (deviceTrialError) {
+      return { used: TRIAL_DAYS, remaining: 0, total: TRIAL_DAYS };
+    }
+
+    // Prefer Redux remaining days if available
+    if (typeof trialDaysRemaining === 'number') {
+      const remaining = Math.max(0, Math.min(TRIAL_DAYS, trialDaysRemaining));
+      const used = Math.max(0, Math.min(TRIAL_DAYS, TRIAL_DAYS - remaining));
+      return { used, remaining, total: TRIAL_DAYS };
+    }
+
+    // Fallback: derive from user.trialStart
+    const trialStartRaw = (user as any)?.trialStart;
+    if (trialStartRaw) {
+      const start = new Date(trialStartRaw);
+      if (!Number.isNaN(start.getTime())) {
+        const days = Math.floor((Date.now() - start.getTime()) / msPerDay);
+        // day-1 based for UX: day 0 => 1 day used
+        const used = Math.max(0, Math.min(TRIAL_DAYS, days + 1));
+        const remaining = Math.max(0, TRIAL_DAYS - used);
+        return { used, remaining, total: TRIAL_DAYS };
+      }
+    }
+
+    // If backend marks trial already used but doesn't provide trialStart, assume trial consumed.
+    if ((user as any)?.trialUsed === true) {
+      return { used: TRIAL_DAYS, remaining: 0, total: TRIAL_DAYS };
+    }
+
+    return null;
+  };
 
   // Fetch companies data
   useEffect(() => {
@@ -239,7 +280,18 @@ function Index() {
               const diffB = b.difficulty.charAt(0).toUpperCase() + b.difficulty.slice(1);
               return order[diffA] - order[diffB];
             })
-            .map((question) => ({
+            .map((question) => {
+              const rawPaid =
+                (question as any).isPaid ??
+                (question as any).paid ??
+                (question as any).is_paid;
+              const isPaid =
+                rawPaid === true ||
+                rawPaid === 1 ||
+                rawPaid === '1' ||
+                rawPaid === 'true';
+
+              return ({
               id: question.id,
               title: question.title,
               type: question.dbType,
@@ -249,13 +301,29 @@ function Index() {
                 id: question.Topic?.id || 0,
                 name: question.Topic?.name || question.topic
               },
-              isPaid: false
-            })),
+              isPaid
+              });
+            }),
         }));
 
         setCompanies(transformedCompanies);
-      } catch (e) {
-        setErrorCompanies(e.message);
+        // If request succeeds, clear device restriction banner
+        if (deviceTrialError) setDeviceTrialError(null);
+      } catch (e: any) {
+        if (e.response?.status === 403) {
+          const backendMsg = (e.response.data?.message || '').toString();
+          // Specific UX message for device-based trial restriction
+          if (backendMsg.toLowerCase().includes('used on this device')) {
+            setDeviceTrialError(
+              'Your free trial has already been used on this device.\nTo continue accessing all features, please upgrade using the option in the sidebar.'
+            );
+            setErrorCompanies(null);
+          } else {
+            setErrorCompanies(backendMsg || 'Access denied.');
+          }
+        } else {
+          setErrorCompanies('Failed to load questions.');
+        }
       } finally {
         setLoadingCompanies(false);
       }
@@ -270,8 +338,21 @@ function Index() {
       try {
         const response = await apiInstance.get('/api/question/getUserProgress');
         setProgressData(response.data.progress);
-      } catch (e) {
-        setErrorProgress(e.message);
+        if (deviceTrialError) setDeviceTrialError(null);
+      } catch (e: any) {
+        if (e.response?.status === 403) {
+          const backendMsg = (e.response.data?.message || '').toString();
+          if (backendMsg.toLowerCase().includes('used on this device')) {
+            setDeviceTrialError(
+              'Your free trial has already been used on this device.\nTo continue accessing all features, please upgrade using the option in the sidebar.'
+            );
+            setErrorProgress(null);
+          } else {
+            setErrorProgress(backendMsg || 'Access denied.');
+          }
+        } else {
+          setErrorProgress('Failed to load progress.');
+        }
       } finally {
         setLoadingProgress(false);
       }
@@ -367,12 +448,51 @@ const handleApplyFilters = (filters) => {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
+        <div className="flex flex-col gap-2 justify-between items-center sm:flex-row">
+          <div>
           <h1 className="text-2xl font-bold text-datacareer-darkBlue mb-2">SQL Interview Questions</h1>
-          <p className="text-gray-600">
-            Practice SQL interview questions from top tech companies
-          </p>
+            <p className="text-gray-600">
+              Practice SQL interview questions from top tech companies
+            </p>
+          </div>
+
+        {!deviceTrialError && trialStatus === 'trial-active' && (() => {
+          const info = getTrialInfo();
+          if (!info) return null;
+          return (
+            <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <p className="text-blue-900 font-medium">
+                  Trial Active
+                </p>
+                <p className="text-sm text-blue-800">
+                  Remaining: <span className="font-semibold">{info.remaining}</span> days
+                  {' '}• Used: <span className="font-semibold">{info.used}/{info.total}</span> days
+                </p>
+              </div>
+            </div>
+          );
+        })()}
         </div>
+
+
+        {deviceTrialError && (
+          <div className="mb-6 rounded-lg border border-yellow-300 bg-yellow-50 p-4">
+            <p className="text-yellow-800 font-medium whitespace-pre-line">
+              {deviceTrialError}
+            </p>
+            {(() => {
+              const info = getTrialInfo();
+              if (!info) return null;
+              return (
+                <p className="mt-2 text-sm text-yellow-700">
+                  Trial used: <span className="font-semibold">{info.used}/{info.total}</span> days
+                  {' '}• Remaining: <span className="font-semibold">{info.remaining}</span> days
+                </p>
+              );
+            })()}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3">
@@ -394,8 +514,14 @@ const handleApplyFilters = (filters) => {
             />
 
             {loadingCompanies && <p>Loading companies...</p>}
-            {errorCompanies && <p className="text-red-500">Error loading companies: {errorCompanies}</p>}
-            {!loadingCompanies && !errorCompanies && (filteredCompanies.length > 0 ? (
+            {!deviceTrialError && errorCompanies && (
+              <div className="mb-4 rounded-lg border border-yellow-300 bg-yellow-50 p-4">
+                <p className="text-yellow-800 font-medium whitespace-pre-line">
+                  {errorCompanies}
+                </p>
+              </div>
+            )}
+            {!deviceTrialError && !loadingCompanies && !errorCompanies && (filteredCompanies.length > 0 ? (
               <QuestionList companies={filteredCompanies} />
             ) : (
               <p>No companies found matching your criteria.</p>
@@ -404,8 +530,8 @@ const handleApplyFilters = (filters) => {
 
           <div className="lg:col-span-1">
             {loadingProgress && <p>Loading progress...</p>}
-            {errorProgress && <p className="text-red-500">Error loading progress: {errorProgress}</p>}
-            {!loadingProgress && !errorProgress && (
+            {!deviceTrialError && errorProgress && <p className="text-red-500">Error loading progress: {errorProgress}</p>}
+            {!deviceTrialError && !loadingProgress && !errorProgress && (
               <ProgressSummary {...progressSummaryProps} />
             )}
           </div>

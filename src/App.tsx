@@ -11,6 +11,7 @@ import ResetPassword from '@/pages/auth/ResetPassword';
 import Index from '@/pages/Index';
 import QuestionDetail from '@/pages/QuestionDetail';
 import JobDatabase from '@/pages/JobDatabase';
+import SubscriptionSettings from '@/pages/SubscriptionSettings';
 import PaymentSuccess from '@/pages/payment/PaymentSuccess';
 import PaymentCancel from '@/pages/payment/PaymentCancel';
 import { store } from './redux/store';
@@ -54,6 +55,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <JobDatabase />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings/subscription"
+              element={
+                <ProtectedRoute>
+                  <SubscriptionSettings />
                 </ProtectedRoute>
               }
             />
