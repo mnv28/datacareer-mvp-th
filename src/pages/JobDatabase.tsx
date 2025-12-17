@@ -5,8 +5,10 @@ import MainLayout from '@/components/layout/MainLayout';
 import JobFilterBar from '@/components/jobs/JobFilterBar';
 import JobTable from '../components/jobs/JobTable';
 import { Button } from '@/components/ui/button';
-import { Download, Save, ArrowUpDown } from 'lucide-react';
+import { ArrowUpDown, AlertTriangle, CreditCard, Loader2 } from 'lucide-react';
 import australiaFlag from '../assets/Flag_of_Australia.svg.png';
+import { toast } from 'sonner';
+import { paymentService } from '@/redux/services/payment';
 
 interface JobFilters {
   postedDate: Date | undefined;
@@ -43,10 +45,44 @@ const JobDatabase: React.FC = () => {
   const [limit] = useState<number>(30);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errorJobs, setErrorJobs] = useState<string | null>(null);
+  const [deviceTrialError, setDeviceTrialError] = useState<string | null>(null);
+  const [isUpgradingFromBanner, setIsUpgradingFromBanner] = useState(false);
   const [jobStats, setJobStats] = useState<{ last7Days: number; last30Days: number }>({
     last7Days: 0,
     last30Days: 0,
   });
+
+  const handleUpgradeFromBanner = async () => {
+    setIsUpgradingFromBanner(true);
+    try {
+      const resp = await paymentService.createCheckoutSession();
+      if (resp.success && resp.url) {
+        window.location.href = resp.url;
+        return;
+      }
+      throw new Error('Failed to start checkout');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to start checkout. Please try again.');
+      setIsUpgradingFromBanner(false);
+    }
+  };
+
+  const handleApiError = (e: any, fallbackMessage: string) => {
+    if (e?.response?.status === 403) {
+      const backendMsg = (e.response.data?.message || e.response.data?.error || '').toString();
+      if (backendMsg.toLowerCase().includes('used on this device')) {
+        setDeviceTrialError(
+          'Your free trial has already been used on this device.\nTo continue accessing all features, try upgrading to a premium plan.'
+        );
+        setErrorJobs(null);
+        return;
+      }
+      setErrorJobs(backendMsg || 'Access denied.');
+      return;
+    }
+    setErrorJobs(fallbackMessage);
+  };
 
   const mapApiRowsToJobs = (rows: any[]) => {
     return rows.map((r: any, idx: number) => {
@@ -251,15 +287,17 @@ const JobDatabase: React.FC = () => {
         const jobId = r?.job_id || r?.id;
         if (jobId) savedIds.add(String(jobId));
       });
+      if (deviceTrialError) setDeviceTrialError(null);
       return savedIds;
     } catch (e) {
-      console.error('Failed to fetch saved job IDs', e);
+      handleApiError(e, 'Failed to load saved jobs.');
       return new Set<string>();
     }
   };
 
   const fetchPage = async (dataset: 'all' | 'hidden' | 'junior', page: number) => {
     setIsLoading(true);
+    setErrorJobs(null);
     const qp = buildQueryParams(page, limit);
     const qs = toQueryString(qp);
     const endpoint =
@@ -270,6 +308,7 @@ const JobDatabase: React.FC = () => {
       const rows = Array.isArray(resp?.data?.data) ? resp.data.data : [];
       const mappedJobs = mapApiRowsToJobs(rows);
       setJobs(mappedJobs);
+      if (deviceTrialError) setDeviceTrialError(null);
       
       // Fetch saved job IDs and update savedJobs state
       const savedIds = await fetchSavedJobIds();
@@ -299,6 +338,10 @@ const JobDatabase: React.FC = () => {
       }
       // Update total pages for pagination window
       setTotalPages(deriveTotalPages(resp?.data, rows.length || 0, page));
+    } catch (e) {
+      setJobs([]);
+      setJobStats({ last7Days: 0, last30Days: 0 });
+      handleApiError(e, 'Failed to load jobs.');
     } finally {
       setIsLoading(false);
     }
@@ -306,6 +349,7 @@ const JobDatabase: React.FC = () => {
 
   const fetchSavedPage = async (page: number, excludeApiId?: string) => {
     setIsLoading(true);
+    setErrorJobs(null);
     const qp = buildQueryParams(page, limit);
     const qs = toQueryString(qp);
     const url = `/api/jobs/getSavedJobs?${qs}`;
@@ -325,6 +369,7 @@ const JobDatabase: React.FC = () => {
       // Map the saved jobs to the job format
       const mappedJobs = mapSavedRowsToJobs(filteredRows);
       setJobs(mappedJobs);
+      if (deviceTrialError) setDeviceTrialError(null);
       
       // Update savedJobApiIds based on the actual saved jobs from API
       const savedIds = new Set<string>();
@@ -353,6 +398,10 @@ const JobDatabase: React.FC = () => {
           last30Days: resp.data.count || 0,
         });
       }
+    } catch (e) {
+      setJobs([]);
+      setJobStats({ last7Days: 0, last30Days: 0 });
+      handleApiError(e, 'Failed to load saved jobs.');
     } finally {
       setIsLoading(false);
     }
@@ -587,81 +636,154 @@ const JobDatabase: React.FC = () => {
           <div className="grid grid-cols-1">
             {/* Main Content */}
             <div className="lg:col-span-3">
-              {/* Filter Bar */}
-              <JobFilterBar
-                filters={filters}
-                onFiltersChange={handleFiltersChange}
-                onClearFilters={handleClearFilters}
-                onApplyDataset={handleApplyDataset}
-                onDatasetChange={handleDatasetChange}
-                currentDataset={currentDataset}
-                activeTab={activeTab}
-              />
+              {deviceTrialError && (
+                <div className="mb-6 rounded-2xl border border-yellow-200 bg-gradient-to-b from-yellow-50 to-white p-4 sm:p-5 shadow-sm">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-yellow-200 bg-yellow-100">
+                        <AlertTriangle className="h-5 w-5 text-yellow-800" />
+                      </div>
 
-              {/* Job Statistics */}
-              <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-gray-700 text-sm lg:text-base">
-                    <span className="font-semibold">{jobStats.last30Days.toLocaleString()}</span> (Last 30 days) | <span className="font-semibold">{jobStats.last7Days.toLocaleString()}</span> (Last 7 days)
-                  </div>
-                  <div 
-                    className="flex items-center gap-2 cursor-pointer hover:text-datacareer-darkBlue transition-colors cursor-pointer  " 
-                    onClick={handleSortToggle}
-                  >
-                    Date Posted ({sortOrder === 'latest' ? 'Latest First' : 'Oldest First'})
-                    <ArrowUpDown className="h-4 w-4" />
+                      <div className="min-w-0">
+                        <p className="text-sm sm:text-base font-semibold text-yellow-900">
+                          Trial limit reached
+                        </p>
+                        <p className="mt-1 text-sm text-yellow-800 whitespace-pre-line">
+                          {deviceTrialError}
+                        </p>
+
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                          <span className="inline-flex items-center rounded-full border border-yellow-200 bg-white px-3 py-1 text-yellow-900">
+                            <span className="text-yellow-700 mr-1">Used</span>
+                            <span className="font-semibold">7/7</span>
+                            <span className="text-yellow-700 ml-1">days</span>
+                          </span>
+                          <span className="inline-flex items-center rounded-full border border-yellow-200 bg-white px-3 py-1 text-yellow-900">
+                            <span className="text-yellow-700 mr-1">Remaining</span>
+                            <span className="font-semibold">0</span>
+                            <span className="text-yellow-700 ml-1">days</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 sm:items-end">
+                      <Button
+                        onClick={handleUpgradeFromBanner}
+                        disabled={isUpgradingFromBanner}
+                        className="bg-datacareer-blue hover:bg-datacareer-darkBlue w-full sm:w-auto"
+                      >
+                        {isUpgradingFromBanner ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Redirecting…
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="mr-2 h-4 w-4" />
+                            Upgrade to Pro
+                          </>
+                        )}
+                      </Button>
+                      <p className="text-xs text-yellow-700">
+                        Secure payment via Stripe • $4.90/month
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {!deviceTrialError && errorJobs && (
+                <div className="mb-4 rounded-lg border border-yellow-300 bg-yellow-50 p-4">
+                  <p className="text-yellow-800 font-medium whitespace-pre-line">
+                    {errorJobs}
+                  </p>
+                </div>
+              )}
+
+              {/* Filter Bar */}
+              {!deviceTrialError && (
+                <JobFilterBar
+                  filters={filters}
+                  onFiltersChange={handleFiltersChange}
+                  onClearFilters={handleClearFilters}
+                  onApplyDataset={handleApplyDataset}
+                  onDatasetChange={handleDatasetChange}
+                  currentDataset={currentDataset}
+                  activeTab={activeTab}
+                />
+              )}
+
+              {/* Job Statistics */}
+              {!deviceTrialError && (
+                <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="text-gray-700 text-sm lg:text-base">
+                      <span className="font-semibold">{jobStats.last30Days.toLocaleString()}</span> (Last 30 days) | <span className="font-semibold">{jobStats.last7Days.toLocaleString()}</span> (Last 7 days)
+                    </div>
+                    <div
+                      className="flex items-center gap-2 cursor-pointer hover:text-datacareer-darkBlue transition-colors cursor-pointer  "
+                      onClick={handleSortToggle}
+                    >
+                      Date Posted ({sortOrder === 'latest' ? 'Latest First' : 'Oldest First'})
+                      <ArrowUpDown className="h-4 w-4" />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Job Table */}
-              {isLoading && (
+              {!deviceTrialError && isLoading && (
                 <div className="bg-white p-4 rounded-lg shadow-sm mb-4 flex items-center gap-3">
                   <div className="w-4 h-4 border-2 border-gray-300 border-t-datacareer-darkBlue rounded-full animate-spin" />
                   <span className="text-sm text-gray-600">Loading results…</span>
                 </div>
               )}
-              <JobTable 
-                jobs={displayedJobs} 
-                savedJobs={savedJobs}
-                onSaveJob={handleSaveJob}
-                activeTab={activeTab}
-              />
+              {!deviceTrialError && (
+                <JobTable
+                  jobs={displayedJobs}
+                  savedJobs={savedJobs}
+                  onSaveJob={handleSaveJob}
+                  activeTab={activeTab}
+                />
+              )}
 
               {/* Pagination */}
-              <div className="flex items-center justify-center gap-3 mt-4">
-                <button
-                  className="px-3 py-1 text-sm rounded border hover:bg-gray-50 disabled:opacity-50"
-                  disabled={currentPage <= 1 || isLoading}
-                  onClick={() => (activeTab === 'tracker' ? fetchSavedPage(currentPage - 1) : fetchPage(currentDataset, currentPage - 1))}
-                >
-                  Prev
-                </button>
-                {/* Numbered pages (5-per-block window) */}
-                <div className="flex items-center gap-2">
-                  {pageNumbers.map((pageNum) => (
-                    <button
-                      key={pageNum}
-                      className={`min-w-[28px] h-7 px-2 text-sm rounded border ${
-                        pageNum === currentPage
-                          ? 'bg-datacareer-darkBlue text-white border-datacareer-darkBlue'
-                          : 'hover:bg-gray-50'
-                      }`}
-                      disabled={isLoading}
-                      onClick={() => (activeTab === 'tracker' ? fetchSavedPage(pageNum) : fetchPage(currentDataset, pageNum))}
-                    >
-                      {pageNum}
-                    </button>
-                  ))}
+              {!deviceTrialError && (
+                <div className="flex items-center justify-center gap-3 mt-4">
+                  <button
+                    className="px-3 py-1 text-sm rounded border hover:bg-gray-50 disabled:opacity-50"
+                    disabled={currentPage <= 1 || isLoading}
+                    onClick={() => (activeTab === 'tracker' ? fetchSavedPage(currentPage - 1) : fetchPage(currentDataset, currentPage - 1))}
+                  >
+                    Prev
+                  </button>
+                  {/* Numbered pages (5-per-block window) */}
+                  <div className="flex items-center gap-2">
+                    {pageNumbers.map((pageNum) => (
+                      <button
+                        key={pageNum}
+                        className={`min-w-[28px] h-7 px-2 text-sm rounded border ${
+                          pageNum === currentPage
+                            ? 'bg-datacareer-darkBlue text-white border-datacareer-darkBlue'
+                            : 'hover:bg-gray-50'
+                        }`}
+                        disabled={isLoading}
+                        onClick={() => (activeTab === 'tracker' ? fetchSavedPage(pageNum) : fetchPage(currentDataset, pageNum))}
+                      >
+                        {pageNum}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    className="px-3 py-1 text-sm rounded border hover:bg-gray-50 disabled:opacity-50"
+                    disabled={currentPage >= totalPages || isLoading}
+                    onClick={() => (activeTab === 'tracker' ? fetchSavedPage(currentPage + 1) : fetchPage(currentDataset, currentPage + 1))}
+                  >
+                    Next
+                  </button>
                 </div>
-                <button
-                  className="px-3 py-1 text-sm rounded border hover:bg-gray-50 disabled:opacity-50"
-                  disabled={currentPage >= totalPages || isLoading}
-                  onClick={() => (activeTab === 'tracker' ? fetchSavedPage(currentPage + 1) : fetchPage(currentDataset, currentPage + 1))}
-                >
-                  Next
-                </button>
-              </div>
+              )}
             </div>
 
             {/* Right Sidebar */}
