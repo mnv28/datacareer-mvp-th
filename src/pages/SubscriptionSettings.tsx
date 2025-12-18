@@ -26,6 +26,12 @@ const SubscriptionSettings: React.FC = () => {
     subscriptionStatus === 'trialing' ||
     subscriptionStatus === 'trial';
 
+  // Check if trial limit reached (trial expired or used on device)
+  const isTrialLimitReached = 
+    trialStatus === 'trial-expired' || 
+    (user as any)?.trialUsed === true ||
+    (trialDaysRemaining === 0 && trialStatus !== 'trial-active');
+
   const trialInfo = useMemo(() => {
     // Prefer backend remaining days from login/check-trial-status
     if (typeof trialDaysRemaining === 'number') {
@@ -137,7 +143,14 @@ const SubscriptionSettings: React.FC = () => {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm text-gray-600">Plan</p>
-                    <p className="text-xl font-semibold text-gray-900">{isPro ? 'Pro Monthly' : (trialStatus === 'trial-active' ? 'Free Trial' : 'Free')}</p>
+                    <p className="text-xl font-semibold text-gray-900">
+                      {isPro 
+                        ? 'Pro Monthly' 
+                        : isTrialLimitReached 
+                          ? 'Trial Expired' 
+                          : (trialStatus === 'trial-active' ? 'Free Trial' : 'Free')
+                      }
+                    </p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-600">Price</p>
@@ -145,7 +158,7 @@ const SubscriptionSettings: React.FC = () => {
                   </div>
                 </div>
 
-                {isPro && (
+                {/* {isPro && (
                   <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 text-sm">
                     <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                       <p className="text-xs font-medium text-gray-600">Start date</p>
@@ -156,9 +169,10 @@ const SubscriptionSettings: React.FC = () => {
                       <p className="font-semibold text-gray-900">{isLoadingBilling ? 'Loading…' : formatDate(billingEnd)}</p>
                     </div>
                   </div>
-                )}
+                )} */}
 
-                {trialInfo && !isPro && (
+                {/* Only show trial progress if trial is active and not expired/limit reached */}
+                {trialInfo && !isPro && !isTrialLimitReached && (
                   <div className="mt-4">
                     <div className="flex items-center justify-between text-sm text-gray-700">
                       <span>Trial progress</span>

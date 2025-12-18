@@ -127,9 +127,9 @@ const QuestionList: React.FC<QuestionListProps> = ({ companies }) => {
                       </span>
                       {/* Paid/Free badge */}
                       {question.isPaid ? (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300 font-semibold ml-2">Paid</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300 font-semibold ml-2">Pro</span>
                       ) : (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 border border-green-300 font-semibold ml-2">Free</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 border border-green-300 font-semibold ml-2">Pro</span>
                       )}
                     </div>
                   </Link>
