@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Loader2, Rocket, ShieldCheck } from 'lucide-react';
+import { apiInstance } from '@/api/axiosApi';
+import { toast } from 'sonner';
 
 interface TrialStartModalProps {
   open: boolean;
@@ -12,14 +14,49 @@ interface TrialStartModalProps {
 
 const TrialStartModal: React.FC<TrialStartModalProps> = ({ open, onActivated }) => {
   const navigate = useNavigate();
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
 
-  const handleActivate = () => {
-    // Static modal: just redirect user to home on click
-    setIsRedirecting(true);
-    // If someone still passes onActivated, call it (no-op data)
-    onActivated?.({});
-    navigate('/', { replace: true });
+  const handleActivate = async () => {
+    setIsActivating(true);
+    try {
+      // Call backend API to activate trial
+      const response = await apiInstance.post('/api/auth/start-trial');
+      const data = response.data;
+      
+      // Update localStorage with updated user data
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+      
+      // Call onActivated callback with response data
+      onActivated?.({
+        user: data.user,
+        trialStatus: data.trialStatus || 'trial-active',
+        trialDaysRemaining: data.trialDaysRemaining ?? 7,
+      });
+      
+      toast.success('Trial activated successfully!');
+      navigate('/', { replace: true });
+    } catch (error: any) {
+      console.error('Trial activation error:', error);
+      // If API doesn't exist or fails, fallback to local activation
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        user.trialStart = new Date().toISOString();
+        localStorage.setItem('user', JSON.stringify(user));
+        onActivated?.({
+          user,
+          trialStatus: 'trial-active',
+          trialDaysRemaining: 7,
+        });
+        toast.success('Trial activated!');
+        navigate('/', { replace: true });
+      } else {
+        toast.error(error?.response?.data?.message || error?.message || 'Failed to activate trial. Please try again.');
+        setIsActivating(false);
+      }
+    }
   };
 
   return (
@@ -64,13 +101,13 @@ const TrialStartModal: React.FC<TrialStartModalProps> = ({ open, onActivated }) 
           <div className="grid grid-cols-1 gap-3">
             <Button
               onClick={handleActivate}
-              disabled={isRedirecting}
+              disabled={isActivating}
               className="h-12 bg-datacareer-blue hover:bg-datacareer-darkBlue text-white font-semibold rounded-xl"
             >
-              {isRedirecting ? (
+              {isActivating ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Redirecting…
+                  Activating…
                 </>
               ) : (
                 'Activate Trial'

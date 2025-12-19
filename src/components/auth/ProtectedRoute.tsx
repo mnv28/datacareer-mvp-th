@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 import { updateTrialStatus } from '@/redux/slices/authSlice';
-import TrialExpiredModal from '@/components/payment/TrialExpiredModal';
 import TrialStartModal from '@/components/payment/TrialStartModal';
 import { toast } from 'sonner';
 import { apiInstance } from '@/api/axiosApi';
@@ -71,6 +70,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         const daysDifference = Math.floor((now.getTime() - trialStart.getTime()) / (1000 * 60 * 60 * 24));
         derivedTrialStatus = daysDifference < 7 ? 'trial-active' : 'trial-expired';
       }
+    } else if (!derivedTrialStatus && !latestEffectiveUser) {
+      // No user data yet - might be first login, wait a bit
+      derivedTrialStatus = undefined;
     }
 
     setCurrentTrialStatus(derivedTrialStatus);
@@ -120,10 +122,22 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     }
 
     setIsCheckingTrial(false);
-  }, [token, trialStatus, user, dispatch]);
+  }, [token, trialStatus, user, dispatch, refreshAttempted]);
 
   if (!token) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Wait for trial check to complete before showing anything
+  if (isCheckingTrial) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-datacareer-blue border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   const subscriptionStatus = (effectiveUser?.subscriptionStatus || '').toString().toLowerCase();
@@ -133,8 +147,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     subscriptionStatus === 'trialing' ||
     subscriptionStatus === 'trial';
 
+  // Show trial start modal for first-time users (no-trial status)
+  // Check if user exists but has no trialStart (first-time login)
+  const shouldShowTrialStart = 
+    !isCheckingTrial && 
+    !hasActiveSubscription && 
+    effectiveUser && // User must exist
+    !effectiveUser.trialStart && // No trial started yet
+    (currentTrialStatus === 'no-trial' || currentTrialStatus === undefined);
 
-  if (!isCheckingTrial && currentTrialStatus === 'no-trial' && !hasActiveSubscription) {
+  if (shouldShowTrialStart) {
     return (
       <>
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
