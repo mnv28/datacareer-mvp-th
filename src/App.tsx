@@ -88,7 +88,10 @@ const App = () => {
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-          <Toaster position="top-right" />
+          <Toaster 
+            position="top-right" 
+            closeButton 
+          />
         </Router>
       </SidebarProvider>
     </Provider>

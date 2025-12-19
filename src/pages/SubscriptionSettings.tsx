@@ -7,16 +7,33 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { paymentService } from '@/redux/services/payment';
 import { useAppSelector } from '@/redux/hooks';
-import { Crown, CreditCard, Loader2, ShieldCheck } from 'lucide-react';
+import { Crown, CreditCard, Loader2, ShieldCheck, XCircle, AlertCircle } from 'lucide-react';
+import { useAppDispatch } from '@/redux/hooks';
+import { updateTrialStatus } from '@/redux/slices/authSlice';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const TRIAL_DAYS = 7;
 
 const SubscriptionSettings: React.FC = () => {
   const { user, trialStatus, trialDaysRemaining } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [billingStart, setBillingStart] = useState<string | null>(null);
   const [billingEnd, setBillingEnd] = useState<string | null>(null);
   const [isLoadingBilling, setIsLoadingBilling] = useState(false);
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState<boolean | null>(null);
+  const [accessUntil, setAccessUntil] = useState<string | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const subscriptionStatus = (user?.subscriptionStatus || '').toString().toLowerCase();
   const isPro =
@@ -74,10 +91,15 @@ const SubscriptionSettings: React.FC = () => {
         setBillingStart(sub?.startDate ?? null);
         // Use renewsOn as the "end/next billing" date (per backend)
         setBillingEnd((sub as any)?.renewsOn ?? (sub as any)?.endDate ?? (sub as any)?.endsOn ?? null);
+        // Check if subscription is scheduled to cancel
+        setCancelAtPeriodEnd((sub as any)?.cancelAtPeriodEnd ?? false);
+        setAccessUntil((sub as any)?.accessUntil ?? null);
       } catch {
         if (!isMounted) return;
         setBillingStart(null);
         setBillingEnd(null);
+        setCancelAtPeriodEnd(null);
+        setAccessUntil(null);
       } finally {
         if (isMounted) setIsLoadingBilling(false);
       }
@@ -107,6 +129,43 @@ const SubscriptionSettings: React.FC = () => {
     } catch (e: any) {
       toast.error(e?.message || 'Failed to start checkout. Please try again.');
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCancelClick = () => {
+    setShowCancelDialog(true);
+  };
+
+  const handleCancelSubscription = async () => {
+    setShowCancelDialog(false);
+    setIsCancelling(true);
+    try {
+      const resp = await paymentService.cancelSubscription();
+      
+      // Update local state
+      setCancelAtPeriodEnd(resp.cancelAtPeriodEnd);
+      setAccessUntil(resp.accessUntil);
+      
+      // Update Redux user state
+      try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const updatedUser = JSON.parse(userStr);
+          updatedUser.cancelAtPeriodEnd = resp.cancelAtPeriodEnd;
+          updatedUser.subscriptionEndDate = resp.accessUntil;
+          updatedUser.subscriptionStatus = resp.subscriptionStatus;
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          dispatch(updateTrialStatus({ user: updatedUser }));
+        }
+      } catch (e) {
+        // Ignore localStorage update errors
+      }
+      
+      toast.success(resp.message || 'Auto-pay cancelled successfully. Your subscription will remain active until the end of the current period.');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to cancel subscription. Please try again.');
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -191,6 +250,15 @@ const SubscriptionSettings: React.FC = () => {
                 <div className="text-sm text-gray-600">
                   <div className="capitalize"><span className="font-medium text-gray-800 capitalize">Status:</span> {(user?.subscriptionStatus || trialStatus || 'unknown').toString()}</div>
                   <div className="capitalize"><span className="font-medium text-gray-800 capitalize">Plan type:</span> {(user?.planType || (isPro ? 'premium' : 'trial')).toString()}</div>
+                  {cancelAtPeriodEnd && accessUntil && (
+                    <div className="mt-2 flex items-start gap-2 rounded-lg border border-orange-200 bg-orange-50 p-2">
+                      <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-xs text-orange-800">
+                        <p className="font-medium">Auto-pay cancelled</p>
+                        <p>Your subscription will end on {formatDate(accessUntil)}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 {!isPro ? (
                   <div className="flex gap-2">
@@ -208,12 +276,56 @@ const SubscriptionSettings: React.FC = () => {
                       )}
                     </Button>
                   </div>
-                ) : null}
+                ) : (
+                  !cancelAtPeriodEnd && (
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleCancelClick} 
+                        disabled={isCancelling} 
+                        variant="outline"
+                        className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-900"
+                      >
+                        {isCancelling ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Cancelling…
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="mr-2 h-4 w-4" />
+                            Cancel Auto-pay
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Cancel Subscription Confirmation Dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Auto-pay?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel auto-pay? Your subscription will remain active until the end of the current billing period, but will not renew automatically. You can resubscribe anytime before the period ends.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelSubscription}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Yes, Cancel Auto-pay
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };

@@ -9,6 +9,8 @@ import { ArrowUpDown, AlertTriangle, CreditCard, Loader2 } from 'lucide-react';
 import australiaFlag from '../assets/Flag_of_Australia.svg.png';
 import { toast } from 'sonner';
 import { paymentService } from '@/redux/services/payment';
+import { useAppSelector } from '@/redux/hooks';
+import { useNavigate } from 'react-router-dom';
 
 interface JobFilters {
   postedDate: Date | undefined;
@@ -48,10 +50,69 @@ const JobDatabase: React.FC = () => {
   const [errorJobs, setErrorJobs] = useState<string | null>(null);
   const [deviceTrialError, setDeviceTrialError] = useState<string | null>(null);
   const [isUpgradingFromBanner, setIsUpgradingFromBanner] = useState(false);
+  const [subscriptionDaysLeft, setSubscriptionDaysLeft] = useState<number | null>(null);
   const [jobStats, setJobStats] = useState<{ last7Days: number; last30Days: number }>({
     last7Days: 0,
     last30Days: 0,
   });
+
+  const { user, trialStatus, trialDaysRemaining } = useAppSelector((state) => state.auth);
+  const navigate = useNavigate();
+
+  // Check if user is Pro (not trial)
+  const subscriptionStatus = (user?.subscriptionStatus || '').toString().toLowerCase();
+  const isPro =
+    user?.paymentDone === true ||
+    trialStatus === 'paid' ||
+    subscriptionStatus === 'active' ||
+    subscriptionStatus === 'trialing' ||
+    subscriptionStatus === 'trial';
+
+  // Check if trial is expired (not Pro and trial actually expired)
+  // Only show overlay when trial is explicitly expired, not during active trial
+  const isTrialExpired = useMemo(() => {
+    if (isPro) return false;
+    
+    if (trialStatus === 'trial-expired') return true;
+    
+    if (deviceTrialError !== null) return true;
+    
+    if ((user as any)?.trialUsed === true && trialStatus !== 'trial-active') {
+      return true;
+    }
+    
+    return false;
+  }, [isPro, trialStatus, user, deviceTrialError]);
+
+  // Mock data for trial expired users
+  const mockJobs = useMemo(() => {
+    if (!isTrialExpired) return [];
+    
+    const now = Date.now();
+    return Array.from({ length: 10 }, (_, idx) => {
+      const date = new Date(now - idx * 86400000);
+      return {
+        id: idx + 1,
+        apiId: `mock-${idx + 1}`,
+        url: '#',
+        postedDate: date.toISOString(),
+        postedDateValue: date,
+        company: {
+          title: `Senior Data Analyst - ${['Sydney', 'Melbourne', 'Brisbane'][idx % 3]}`,
+          name: ['TechCorp', 'DataSolutions', 'AnalyticsPro', 'DataTech', 'CloudAnalytics'][idx % 5],
+          location: ['Sydney, NSW', 'Melbourne, VIC', 'Brisbane, QLD'][idx % 3],
+        },
+        topTechSkill: ['Python', 'SQL', 'Tableau', 'Power BI', 'R'][idx % 5],
+        function: 'Data Analysis',
+        func: 'Data Analysis',
+        industry: 'Technology',
+        otherDetails: ['Senior', 'Full-time', 'Hybrid'],
+        role_cat: 'Senior',
+        exp_level: 'Senior',
+        location_type: 'Hybrid',
+      };
+    });
+  }, [isTrialExpired]);
 
   const handleUpgradeFromBanner = async () => {
     setIsUpgradingFromBanner(true);
@@ -180,8 +241,7 @@ const JobDatabase: React.FC = () => {
         func: jobData?.function || r?.function || '',
         industry: jobData?.industry || r?.industry || '',
         otherDetails: details,
-        status: r?.status, // status comes from the saved job record, not the job object
-        // Store original API fields for saving jobs properly
+        status: r?.status,
         role_cat: jobData?.role_cat || r?.role_cat || undefined,
         exp_level: jobData?.exp_level || r?.exp_level || undefined,
         sec_clearance: jobData?.sec_clearance || r?.sec_clearance || undefined,
@@ -476,10 +536,13 @@ const JobDatabase: React.FC = () => {
     setTotalPages(1);
   };
 
-  // Display jobs as received from API (already sorted)
+  // Display jobs as received from API (already sorted) or mock data when trial expired
   const displayedJobs = useMemo(() => {
+    if (isTrialExpired) {
+      return mockJobs;
+    }
     return [...jobs];
-  }, [jobs]);
+  }, [jobs, isTrialExpired, mockJobs]);
 
   const pageNumbers = useMemo(() => {
     const windowSize = 5;
@@ -524,7 +587,6 @@ const JobDatabase: React.FC = () => {
 
   // Auto-fetch when filters, dataset, or sort order change (page resets to 1)
   useEffect(() => {
-    // Refetch page 1 on filter, dataset, or sort order change
     setTotalPages(1);
     if (activeTab === 'tracker') {
       fetchSavedPage(1).catch(console.error);
@@ -548,8 +610,75 @@ const JobDatabase: React.FC = () => {
     }
   }, [activeTab]);
 
+  // Fetch subscription end date for Pro users
+  useEffect(() => {
+    if (!isPro) {
+      setSubscriptionDaysLeft(null);
+      return;
+    }
+
+    let isMounted = true;
+    (async () => {
+      try {
+        const resp = await paymentService.getSubscriptionStatus();
+        if (!isMounted) return;
+        const sub = resp?.subscription;
+        const endDateStr = (sub as any)?.renewsOn ?? (sub as any)?.endDate ?? (sub as any)?.endsOn ?? null;
+        
+        if (endDateStr) {
+          const endDate = new Date(endDateStr);
+          const now = new Date();
+          const diffTime = endDate.getTime() - now.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          if (diffDays >= 0 && diffDays <= 3) {
+            setSubscriptionDaysLeft(diffDays);
+          } else {
+            setSubscriptionDaysLeft(null);
+          }
+        } else {
+          setSubscriptionDaysLeft(null);
+        }
+      } catch {
+        if (!isMounted) return;
+        setSubscriptionDaysLeft(null);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isPro]);
+
   return (
     <MainLayout>
+      {/* Pro Plan Expiration Warning - Top Right Corner */}
+      {isPro && subscriptionDaysLeft !== null && subscriptionDaysLeft <= 3 && (
+        <div className="fixed top-4 right-4 z-50 rounded-lg border border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100 p-3 shadow-lg max-w-xs">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-orange-900">
+                Plan Expiring Soon
+              </p>
+              <p className="text-xs text-orange-800 mt-1">
+                {subscriptionDaysLeft === 0 
+                  ? 'Your plan expires today' 
+                  : subscriptionDaysLeft === 1
+                    ? '1 day left'
+                    : `${subscriptionDaysLeft} days left`
+                }
+              </p>
+              <button
+                onClick={() => navigate('/settings/subscription')}
+                className="text-xs text-orange-700 font-medium mt-2 hover:text-orange-900 underline"
+              >
+                Renew now →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="min-h-screen bg-gray-50">
         {/* Header Section */}
         <div className="bg-datacareer-darkBlue text-white">
@@ -702,7 +831,7 @@ const JobDatabase: React.FC = () => {
               )}
 
               {/* Filter Bar */}
-              {!deviceTrialError && (
+              {!deviceTrialError && !isTrialExpired && (
                 <JobFilterBar
                   filters={filters}
                   onFiltersChange={handleFiltersChange}
@@ -715,7 +844,7 @@ const JobDatabase: React.FC = () => {
               )}
 
               {/* Job Statistics */}
-              {!deviceTrialError && (
+              {!deviceTrialError && !isTrialExpired && (
                 <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
                   <div className="flex items-center justify-between">
                     <div className="text-gray-700 text-sm lg:text-base">
@@ -739,7 +868,67 @@ const JobDatabase: React.FC = () => {
                   <span className="text-sm text-gray-600">Loading results…</span>
                 </div>
               )}
-              {!deviceTrialError && (
+              
+              {/* Show mock data with blur overlay when trial expired */}
+              {isTrialExpired ? (
+                <div className="relative">
+                  {/* Mock stats */}
+                  <div className="blur-sm pointer-events-none mb-4">
+                    <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <div className="text-gray-700 text-sm lg:text-base">
+                          <span className="font-semibold">1,234</span> (Last 30 days) | <span className="font-semibold">156</span> (Last 7 days)
+                        </div>
+                        <div className="flex items-center gap-2 cursor-pointer hover:text-datacareer-darkBlue transition-colors">
+                          Date Posted (Latest First)
+                          <ArrowUpDown className="h-4 w-4" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="blur-sm pointer-events-none">
+                    <JobTable
+                      jobs={mockJobs}
+                      savedJobs={new Set()}
+                      onSaveJob={() => {}}
+                      activeTab={activeTab}
+                    />
+                  </div>
+                  {/* Blur overlay with Upgrade button */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-sm z-10">
+                    <div className="bg-white rounded-2xl border-2 border-datacareer-blue shadow-xl p-8 max-w-md mx-4 text-center">
+                      <div className="mb-4">
+                        <CreditCard className="h-12 w-12 text-datacareer-blue mx-auto mb-3" />
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Upgrade to Pro</h3>
+                        <p className="text-gray-600 mb-4">
+                          Your free trial has ended. Upgrade to Pro to access the full job database and unlock all features.
+                        </p>
+                      </div>
+                      <Button
+                        onClick={handleUpgradeFromBanner}
+                        disabled={isUpgradingFromBanner}
+                        className="bg-datacareer-blue hover:bg-datacareer-darkBlue text-white font-semibold px-8 py-6 text-lg"
+                      >
+                        {isUpgradingFromBanner ? (
+                          <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Redirecting…
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="mr-2 h-5 w-5" />
+                            Upgrade Now
+                          </>
+                        )}
+                      </Button>
+                      <p className="text-xs text-gray-500 mt-3">
+                        Secure payment via Stripe • $4.90/month
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : !deviceTrialError && (
                 <JobTable
                   jobs={displayedJobs}
                   savedJobs={savedJobs}
@@ -748,8 +937,24 @@ const JobDatabase: React.FC = () => {
                 />
               )}
 
-              {/* Pagination */}
-              {!deviceTrialError && (
+              {/* Pagination - Show mock pagination when trial expired */}
+              {isTrialExpired ? (
+                <div className="blur-sm pointer-events-none">
+                  <div className="flex items-center justify-center gap-3 mt-4">
+                    <button className="px-3 py-1 text-sm rounded border hover:bg-gray-50 disabled:opacity-50" disabled>
+                      Prev
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <button className="min-w-[28px] h-7 px-2 text-sm rounded border bg-datacareer-darkBlue text-white border-datacareer-darkBlue">
+                        1
+                      </button>
+                    </div>
+                    <button className="px-3 py-1 text-sm rounded border hover:bg-gray-50 disabled:opacity-50" disabled>
+                      Next
+                    </button>
+                  </div>
+                </div>
+              ) : !deviceTrialError && (
                 <div className="flex items-center justify-center gap-3 mt-4">
                   <button
                     className="px-3 py-1 text-sm rounded border hover:bg-gray-50 disabled:opacity-50"

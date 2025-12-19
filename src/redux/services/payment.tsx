@@ -18,7 +18,17 @@ interface SubscriptionStatusResponse {
     endsOn?: string | null;
     subscriptionId: string | null;
     isTrial?: boolean | null;
+    cancelAtPeriodEnd?: boolean | null;
+    accessUntil?: string | null;
   };
+}
+
+interface CancelSubscriptionResponse {
+  success: boolean;
+  message: string;
+  cancelAtPeriodEnd: boolean;
+  accessUntil: string;
+  subscriptionStatus: string;
 }
 
 export const paymentService = {
@@ -108,6 +118,54 @@ export const paymentService = {
         throw error;
       }
       throw new Error('Failed to load subscription status. Please try again.');
+    }
+  },
+
+  /**
+   * Cancel subscription auto-pay (keeps access until period end)
+   */
+  cancelSubscription: async (): Promise<CancelSubscriptionResponse> => {
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Authentication required. Please login to continue.');
+      }
+
+      const response = await apiInstance.post<CancelSubscriptionResponse>(
+        '/api/payment/cancel-subscription'
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        throw new Error('Session expired. Please login again.');
+      }
+      if (error.response?.status === 403) {
+        const errorMessage = error.response?.data?.message
+          || error.response?.data?.error
+          || 'Access denied. You do not have permission to perform this action.';
+        throw new Error(errorMessage);
+      }
+      if (error.response?.status === 400) {
+        // Already cancelled or no subscription
+        const errorMessage = error.response?.data?.message
+          || error.response?.data?.error
+          || 'Unable to cancel subscription.';
+        throw new Error(errorMessage);
+      }
+      if (error.response?.status === 500) {
+        throw new Error('Server error. Please contact support.');
+      }
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      if (error.message) {
+        throw error;
+      }
+      throw new Error('Failed to cancel subscription. Please try again.');
     }
   },
 };

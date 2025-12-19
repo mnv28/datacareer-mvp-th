@@ -1,12 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import FilterBar from '@/components/questions/FilterBar';
 import QuestionList from '@/components/questions/QuestionList';
 import ProgressSummary from '@/components/questions/ProgressSummary';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { paymentService } from "@/redux/services/payment";
@@ -14,6 +11,7 @@ import { ChevronDown, CheckCircle2, XCircle, MinusCircle, AlertTriangle, CreditC
 import { Company, Question } from "@/components/questions/QuestionList"; // Import types
 import { apiInstance } from "@/api/axiosApi";
 import { useAppSelector } from '@/redux/hooks';
+import { useNavigate } from 'react-router-dom';
 
 // Post Job DB
 
@@ -187,6 +185,16 @@ function Index() {
   const [companies, setCompanies] = useState<Company[]>([]);
 
   const { user, trialDaysRemaining, trialStatus } = useAppSelector((state) => state.auth);
+  const navigate = useNavigate();
+
+  // Check if user is Pro (not trial)
+  const subscriptionStatus = (user?.subscriptionStatus || '').toString().toLowerCase();
+  const isPro =
+    user?.paymentDone === true ||
+    trialStatus === 'paid' ||
+    subscriptionStatus === 'active' ||
+    subscriptionStatus === 'trialing' ||
+    subscriptionStatus === 'trial';
 
   const [loadingCompanies, setLoadingCompanies] = useState(true);
   const [errorCompanies, setErrorCompanies] = useState<string | null>(null);
@@ -207,6 +215,7 @@ function Index() {
   const [errorProgress, setErrorProgress] = useState<string | null>(null);
   const [deviceTrialError, setDeviceTrialError] = useState<string | null>(null);
   const [isUpgradingFromBanner, setIsUpgradingFromBanner] = useState(false);
+  const [subscriptionDaysLeft, setSubscriptionDaysLeft] = useState<number | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
@@ -215,23 +224,36 @@ function Index() {
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
   const [selectedVariants, setSelectedVariants] = useState<string[]>([]);
 
+  // Check if trial is expired (not Pro and trial actually expired)
+  // Only show overlay when trial is explicitly expired, not during active trial
+  const isTrialExpired = useMemo(() => {
+    if (isPro) return false;
+    
+    if (trialStatus === 'trial-expired') return true;
+    
+    if (deviceTrialError !== null) return true;
+    
+    if ((user as any)?.trialUsed === true && trialStatus !== 'trial-active') {
+      return true;
+    }
+    
+    return false;
+  }, [isPro, trialStatus, user, deviceTrialError]);
+
   const getTrialInfo = () => {
     const TRIAL_DAYS = 7;
     const msPerDay = 1000 * 60 * 60 * 24;
 
-    // If device is blocked due to trial already used on this device, show full trial used.
     if (deviceTrialError) {
       return { used: TRIAL_DAYS, remaining: 0, total: TRIAL_DAYS };
     }
 
-    // Prefer Redux remaining days if available
     if (typeof trialDaysRemaining === 'number') {
       const remaining = Math.max(0, Math.min(TRIAL_DAYS, trialDaysRemaining));
       const used = Math.max(0, Math.min(TRIAL_DAYS, TRIAL_DAYS - remaining));
       return { used, remaining, total: TRIAL_DAYS };
     }
 
-    // Fallback: derive from user.trialStart
     const trialStartRaw = (user as any)?.trialStart;
     if (trialStartRaw) {
       const start = new Date(trialStartRaw);
@@ -352,6 +374,47 @@ function Index() {
     fetchCompanies();
   }, [searchQuery, selectedCompanies, selectedTopics, selectedDomains, selectedDifficulties, selectedVariants]);
 
+  // Fetch subscription end date for Pro users
+  useEffect(() => {
+    if (!isPro) {
+      setSubscriptionDaysLeft(null);
+      return;
+    }
+
+    let isMounted = true;
+    (async () => {
+      try {
+        const resp = await paymentService.getSubscriptionStatus();
+        if (!isMounted) return;
+        const sub = resp?.subscription;
+        const endDateStr = (sub as any)?.renewsOn ?? (sub as any)?.endDate ?? (sub as any)?.endsOn ?? null;
+        
+        if (endDateStr) {
+          const endDate = new Date(endDateStr);
+          const now = new Date();
+          const diffTime = endDate.getTime() - now.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          // Only show warning when 3 days or less remaining
+          if (diffDays >= 0 && diffDays <= 3) {
+            setSubscriptionDaysLeft(diffDays);
+          } else {
+            setSubscriptionDaysLeft(null);
+          }
+        } else {
+          setSubscriptionDaysLeft(null);
+        }
+      } catch {
+        if (!isMounted) return;
+        setSubscriptionDaysLeft(null);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isPro]);
+
   // Fetch user progress data
   useEffect(() => {
     const fetchProgress = async () => {
@@ -381,8 +444,85 @@ function Index() {
     fetchProgress();
   }, []);
 
+  // Mock companies data for trial expired users
+  const mockCompanies = useMemo(() => {
+    if (!isTrialExpired) return [];
+    
+    return [
+      {
+        id: 1,
+        name: 'Amazon',
+        logo: undefined,
+        domains: [{ id: 1, name: 'E-Commerce' }, { id: 2, name: 'Cloud Computing' }],
+        questions: [
+          {
+            id: 101,
+            title: 'Customer Order Analysis',
+            type: 'SQL' as const,
+            difficulty: 'Intermediate' as const,
+            status: 'Unattempted' as const,
+            topic: { id: 1, name: 'Data Analysis' },
+            isPaid: false,
+          },
+          {
+            id: 102,
+            title: 'Product Category Metrics',
+            type: 'PostgreSQL' as const,
+            difficulty: 'Advanced' as const,
+            status: 'Unattempted' as const,
+            topic: { id: 2, name: 'Window Functions' },
+            isPaid: true,
+          },
+        ],
+      },
+      {
+        id: 2,
+        name: 'Google',
+        logo: undefined,
+        domains: [{ id: 3, name: 'Technology' }, { id: 4, name: 'Search Analytics' }],
+        questions: [
+          {
+            id: 201,
+            title: 'Search Query Analysis',
+            type: 'SQL' as const,
+            difficulty: 'Advanced' as const,
+            status: 'Unattempted' as const,
+            topic: { id: 3, name: 'Window Functions' },
+            isPaid: true,
+          },
+          {
+            id: 202,
+            title: 'User Session Analysis',
+            type: 'SQL' as const,
+            difficulty: 'Intermediate' as const,
+            status: 'Unattempted' as const,
+            topic: { id: 1, name: 'Data Analysis' },
+            isPaid: false,
+          },
+        ],
+      },
+      {
+        id: 3,
+        name: 'Microsoft',
+        logo: undefined,
+        domains: [{ id: 5, name: 'Technology' }, { id: 6, name: 'Cloud Computing' }],
+        questions: [
+          {
+            id: 301,
+            title: 'Azure Usage Metrics',
+            type: 'PostgreSQL' as const,
+            difficulty: 'Intermediate' as const,
+            status: 'Unattempted' as const,
+            topic: { id: 1, name: 'Data Analysis' },
+            isPaid: false,
+          },
+        ],
+      },
+    ];
+  }, [isTrialExpired]);
+
   // Apply filters
-  const filteredCompanies = companies
+  const filteredCompanies = (isTrialExpired ? mockCompanies : companies)
     .map(company => {
       // Filter questions based on all filter criteria
       const filteredQuestions = company.questions.filter(question => {
@@ -482,6 +622,28 @@ function Index() {
 
   return (
     <MainLayout>
+      {/* Pro Plan Expiration Warning - Top Right Corner (Only show when <= 3 days) */}
+      {isPro && subscriptionDaysLeft !== null && subscriptionDaysLeft <= 3 && (
+        <div className="fixed top-4 right-4 z-50 rounded-lg border border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100 p-3 shadow-lg max-w-xs">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-orange-900">
+                Plan Expiring Soon
+              </p>
+              <p className="text-xs text-orange-800 mt-1">
+                {subscriptionDaysLeft === 0 
+                  ? 'Your plan expires today' 
+                  : subscriptionDaysLeft === 1
+                    ? '1 day left'
+                    : `${subscriptionDaysLeft} days left`
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col gap-2 justify-between items-center sm:flex-row">
           <div>
@@ -512,22 +674,24 @@ function Index() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-4">
           <div className="lg:col-span-3">
-            <FilterBar
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              selectedCompanies={selectedCompanies}
-              setSelectedCompanies={setSelectedCompanies}
-              selectedTopics={selectedTopics}
-              setSelectedTopics={setSelectedTopics}
-              selectedDomains={selectedDomains}
-              setSelectedDomains={setSelectedDomains}
-              selectedDifficulties={selectedDifficulties}
-              setSelectedDifficulties={setSelectedDifficulties}
-              selectedVariants={selectedVariants}
-              setSelectedVariants={setSelectedVariants}
-              onClearAll={handleClearAll}
-              onApply={handleApplyFilters}
-            />
+            {!isTrialExpired && (
+              <FilterBar
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedCompanies={selectedCompanies}
+                setSelectedCompanies={setSelectedCompanies}
+                selectedTopics={selectedTopics}
+                setSelectedTopics={setSelectedTopics}
+                selectedDomains={selectedDomains}
+                setSelectedDomains={setSelectedDomains}
+                selectedDifficulties={selectedDifficulties}
+                setSelectedDifficulties={setSelectedDifficulties}
+                selectedVariants={selectedVariants}
+                setSelectedVariants={setSelectedVariants}
+                onClearAll={handleClearAll}
+                onApply={handleApplyFilters}
+              />
+            )}
 
             {deviceTrialError && (
               <div className="mb-6 rounded-2xl border border-yellow-200 bg-gradient-to-b from-yellow-50 to-white p-4 sm:p-5 shadow-sm">
@@ -592,15 +756,53 @@ function Index() {
               </div>
             )}
 
-            {loadingCompanies && <p>Loading companies...</p>}
-            {!deviceTrialError && errorCompanies && (
+            {loadingCompanies && !isTrialExpired && <p>Loading companies...</p>}
+            {!deviceTrialError && !isTrialExpired && errorCompanies && (
               <div className="mb-4 rounded-lg border border-yellow-300 bg-yellow-50 p-4">
                 <p className="text-yellow-800 font-medium whitespace-pre-line">
                   {errorCompanies}
                 </p>
               </div>
             )}
-            {!deviceTrialError && !loadingCompanies && !errorCompanies && (filteredCompanies.length > 0 ? (
+            {isTrialExpired ? (
+              <div className="relative">
+                <div className="blur-sm pointer-events-none">
+                  <QuestionList companies={filteredCompanies} />
+                </div>
+                {/* Blur overlay with Upgrade button */}
+                <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-sm z-10">
+                  <div className="bg-white rounded-2xl border-2 border-datacareer-blue shadow-xl p-8 max-w-md mx-4 text-center">
+                    <div className="mb-4">
+                      <CreditCard className="h-12 w-12 text-datacareer-blue mx-auto mb-3" />
+                      <h3 className="text-2xl font-bold text-gray-900 mb-2">Upgrade to Pro</h3>
+                      <p className="text-gray-600 mb-4">
+                        Your free trial has ended. Upgrade to Pro to access all SQL interview questions and unlock full features.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={handleUpgradeFromBanner}
+                      disabled={isUpgradingFromBanner}
+                      className="bg-datacareer-blue hover:bg-datacareer-darkBlue text-white font-semibold px-8 py-6 text-lg"
+                    >
+                      {isUpgradingFromBanner ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Redirecting…
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="mr-2 h-5 w-5" />
+                          Upgrade Now
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-gray-500 mt-3">
+                      Secure payment via Stripe • $4.90/month
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : !deviceTrialError && !loadingCompanies && !errorCompanies && (filteredCompanies.length > 0 ? (
               <QuestionList companies={filteredCompanies} />
             ) : (
               <p>No companies found matching your criteria.</p>
@@ -608,10 +810,31 @@ function Index() {
           </div>
 
           <div className="lg:col-span-1">
-            {loadingProgress && <p>Loading progress...</p>}
-            {!deviceTrialError && errorProgress && <p className="text-red-500">Error loading progress: {errorProgress}</p>}
-            {!deviceTrialError && !loadingProgress && !errorProgress && (
-              <ProgressSummary {...progressSummaryProps} />
+            {isTrialExpired ? (
+              <div className="relative">
+                <div className="blur-sm pointer-events-none">
+                  <ProgressSummary 
+                    total={50}
+                    solved={12}
+                    beginner={20}
+                    intermediate={20}
+                    advanced={10}
+                    beginnerSolved={8}
+                    intermediateSolved={3}
+                    advancedSolved={1}
+                    wrong={2}
+                    unattempted={36}
+                  />
+                </div>
+              </div>
+            ) : (
+              <>
+                {loadingProgress && <p>Loading progress...</p>}
+                {!deviceTrialError && errorProgress && <p className="text-red-500">Error loading progress: {errorProgress}</p>}
+                {!deviceTrialError && !loadingProgress && !errorProgress && (
+                  <ProgressSummary {...progressSummaryProps} />
+                )}
+              </>
             )}
           </div>
         </div>
