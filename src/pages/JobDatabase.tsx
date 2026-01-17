@@ -72,22 +72,22 @@ const JobDatabase: React.FC = () => {
   // Only show overlay when trial is explicitly expired, not during active trial
   const isTrialExpired = useMemo(() => {
     if (isPro) return false;
-    
+
     if (trialStatus === 'trial-expired') return true;
-    
+
     if (deviceTrialError !== null) return true;
-    
+
     if ((user as any)?.trialUsed === true && trialStatus !== 'trial-active') {
       return true;
     }
-    
+
     return false;
   }, [isPro, trialStatus, user, deviceTrialError]);
 
   // Mock data for trial expired users
   const mockJobs = useMemo(() => {
     if (!isTrialExpired) return [];
-    
+
     const now = Date.now();
     return Array.from({ length: 10 }, (_, idx) => {
       const date = new Date(now - idx * 86400000);
@@ -189,7 +189,7 @@ const JobDatabase: React.FC = () => {
       const jobData = r?.job || r;
       const postedVal = jobData?.posted_date?.value || jobData?.posted_date || '';
       const dateObj = postedVal ? new Date(postedVal) : new Date();
-      
+
       // Format date for display (YYYY-MM-DD format)
       let formattedDate = '';
       if (postedVal) {
@@ -200,7 +200,7 @@ const JobDatabase: React.FC = () => {
           formattedDate = postedVal.split('T')[0] || postedVal;
         }
       }
-      
+
       // Use other_details from API if available, otherwise build from individual fields
       let details: string[] = [];
       if (r?.other_details && Array.isArray(r.other_details)) {
@@ -223,7 +223,7 @@ const JobDatabase: React.FC = () => {
           if (r?.sec_clearance && r.sec_clearance !== '0') details.push('Clearance');
         }
       }
-      
+
       return {
         id: idx + 1,
         apiId: r?.job_id || jobData?.id || r?.id || '',
@@ -298,7 +298,7 @@ const JobDatabase: React.FC = () => {
     if (filters.postedDate) {
       try {
         qp.posted_date = format(filters.postedDate, 'yyyy-MM-dd');
-      } catch {}
+      } catch { }
     }
     const roleJoined = joinOrUndefined(filters.roleCategory, v => toTitleCase(v.replace('-', ' ')) as string);
     if (roleJoined) qp.role_cat = roleJoined;
@@ -369,11 +369,11 @@ const JobDatabase: React.FC = () => {
       const mappedJobs = mapApiRowsToJobs(rows);
       setJobs(mappedJobs);
       if (deviceTrialError) setDeviceTrialError(null);
-      
+
       // Fetch saved job IDs and update savedJobs state
       const savedIds = await fetchSavedJobIds();
       setSavedJobApiIds(savedIds);
-      
+
       // Map saved API IDs to local job IDs for current page
       setSavedJobs(prev => {
         const newSavedJobs = new Set(prev);
@@ -387,7 +387,7 @@ const JobDatabase: React.FC = () => {
         });
         return newSavedJobs;
       });
-      
+
       setCurrentPage(page);
       // Update job statistics from API response
       if (resp?.data?.last_7_days !== undefined && resp?.data?.last_30_days !== undefined) {
@@ -416,7 +416,7 @@ const JobDatabase: React.FC = () => {
     try {
       const resp = await apiInstance.get(url);
       const rows = Array.isArray(resp?.data?.data) ? resp.data.data : [];
-      
+
       // Filter out excluded job (unsaved job) to handle backend sync delay
       let filteredRows = rows;
       if (excludeApiId) {
@@ -425,12 +425,12 @@ const JobDatabase: React.FC = () => {
           return jobId && String(jobId) !== excludeApiId;
         });
       }
-      
+
       // Map the saved jobs to the job format
       const mappedJobs = mapSavedRowsToJobs(filteredRows);
       setJobs(mappedJobs);
       if (deviceTrialError) setDeviceTrialError(null);
-      
+
       // Update savedJobApiIds based on the actual saved jobs from API
       const savedIds = new Set<string>();
       filteredRows.forEach((r: any) => {
@@ -438,7 +438,7 @@ const JobDatabase: React.FC = () => {
         if (jobId) savedIds.add(String(jobId));
       });
       setSavedJobApiIds(savedIds);
-      
+
       // Mark all jobs as saved in the tracker tab
       setSavedJobs(prev => {
         const newSavedJobs = new Set(prev);
@@ -447,10 +447,10 @@ const JobDatabase: React.FC = () => {
         });
         return newSavedJobs;
       });
-      
+
       setCurrentPage(page);
       setTotalPages(deriveTotalPages(resp?.data, mappedJobs.length || 0, page));
-      
+
       // Update job statistics from saved jobs API response
       if (resp?.data?.last_7_days !== undefined && resp?.data?.last_30_days !== undefined) {
         setJobStats({
@@ -563,11 +563,11 @@ const JobDatabase: React.FC = () => {
     setCurrentDataset(type);
     const mappedJobs = mapApiRowsToJobs(rows);
     setJobs(mappedJobs);
-    
+
     // Fetch saved job IDs and update savedJobs state
     const savedIds = await fetchSavedJobIds();
     setSavedJobApiIds(savedIds);
-    
+
     // Map saved API IDs to local job IDs
     setSavedJobs(prev => {
       const newSavedJobs = new Set(prev);
@@ -580,7 +580,7 @@ const JobDatabase: React.FC = () => {
       });
       return newSavedJobs;
     });
-    
+
     setCurrentPage(1);
     setTotalPages(Math.max(1, Math.ceil((rows.length || 0) / limit) || 1));
   };
@@ -624,13 +624,13 @@ const JobDatabase: React.FC = () => {
         if (!isMounted) return;
         const sub = resp?.subscription;
         const endDateStr = (sub as any)?.renewsOn ?? (sub as any)?.endDate ?? (sub as any)?.endsOn ?? null;
-        
+
         if (endDateStr) {
           const endDate = new Date(endDateStr);
           const now = new Date();
           const diffTime = endDate.getTime() - now.getTime();
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          
+
           if (diffDays >= 0 && diffDays <= 3) {
             setSubscriptionDaysLeft(diffDays);
           } else {
@@ -662,8 +662,8 @@ const JobDatabase: React.FC = () => {
                 Plan Expiring Soon
               </p>
               <p className="text-xs text-orange-800 mt-1">
-                {subscriptionDaysLeft === 0 
-                  ? 'Your plan expires today' 
+                {subscriptionDaysLeft === 0
+                  ? 'Your plan expires today'
                   : subscriptionDaysLeft === 1
                     ? '1 day left'
                     : `${subscriptionDaysLeft} days left`
@@ -684,33 +684,12 @@ const JobDatabase: React.FC = () => {
         <div className="bg-datacareer-darkBlue text-white">
           <div className="mx-auto px-8 py-8">
             <div className="flex flex-col gap-6">
-              <div className="flex-1">
-                <h1 className="text-2xl lg:text-3xl font-bold mb-6">
+              {/* Row 1: Title and Status Bar */}
+              <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+                <h1 className="text-2xl lg:text-3xl font-bold">
                   Curated & Handpicked Job Database
                 </h1>
-                
-                {/* Disclaimer Messages */}
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2 text-xs lg:text-sm">
-                  ⚠️ We are not recruiters or job owners—we just share #data job listings to help job seekers.
-                  </div>
-                  <div className="flex items-start gap-2 text-xs lg:text-sm">
-                    🚨 Be careful: some jobs may be fake. Always check if an ad is genuine.
-                  </div>
-                  <div className="flex items-start gap-2 text-xs lg:text-sm">
-                  🔴 Apply directly or contact the recruiter/hiring manager using the provided link.
-                  </div>
-                  <div className="flex items-start gap-2 text-xs lg:text-sm">
-                  🔔 Some listings use AI-generated content and may have errors or bias. Please verify all details yourself.
-                  </div>
-                  <div className="flex items-start gap-2 text-xs lg:text-sm">
-                    🧐 Most jobs are data-related, but other roles or repeated listings may appear sometimes.
-                  </div>
-                </div>
-              </div>
 
-              {/* Bottom Section - Status Bar and Navigation Tabs */}
-              <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
                 {/* Status Bar */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs lg:text-sm">
                   <div className="flex items-center gap-2">
@@ -722,40 +701,60 @@ const JobDatabase: React.FC = () => {
                     <span>Updated daily at 7 AM Sydney time</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <img 
-                      src={australiaFlag} 
-                      alt="Australia Flag" 
+                    <img
+                      src={australiaFlag}
+                      alt="Australia Flag"
                       className="w-4 h-3 object-contain"
                     />
                     <span>Australia-specific</span>
                   </div>
                 </div>
+              </div>
 
-                 {/* Navigation Tabs */}
-                 <div className="flex gap-2 justify-start lg:justify-end bg-white rounded-lg p-1 px-2 w-fit">
-                   <Button
-                     onClick={() => setActiveTab('database')}
-                     variant={activeTab === 'database' ? 'default' : 'outline'}
-                     className={`px-3 sm:px-4 lg:px-5 py-2 rounded-lg text-xs sm:text-sm hover:bg-none! whitespace-nowrap ${
-                       activeTab === 'database' 
-                         ? 'bg-datacareer-darkBlue text-white' 
-                         : 'bg-transparent text-datacareer-darkBlue border-white'
-                     }`}
-                   > 
-                     <span className="sm:inline">Job Database</span>
-                   </Button>
-                   <Button
-                     onClick={() => setActiveTab('tracker')}
-                     variant={activeTab === 'tracker' ? 'default' : 'outline'}
-                     className={`px-3 sm:px-4 lg:px-5 py-2 rounded-lg text-xs sm:text-sm hover:bg-none! whitespace-nowrap ${
-                       activeTab === 'tracker' 
-                         ? 'bg-datacareer-darkBlue text-white' 
-                         : 'bg-transparent text-datacareer-darkBlue border-white'
-                     }`}
-                   >
-                     <span className="sm:inline">Saved Jobs</span>
-                   </Button>
-                 </div>
+              {/* Row 2: Disclaimer Messages and Navigation Tabs */}
+              <div className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4">
+                {/* Disclaimer Messages */}
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2 text-xs lg:text-sm">
+                    ⚠️ We are not recruiters or job owners—we just share #data job listings to help job seekers.
+                  </div>
+                  <div className="flex items-start gap-2 text-xs lg:text-sm">
+                    🚨 Be careful: some jobs may be fake. Always check if an ad is genuine.
+                  </div>
+                  <div className="flex items-start gap-2 text-xs lg:text-sm">
+                    🔴 Apply directly or contact the recruiter/hiring manager using the provided link.
+                  </div>
+                  <div className="flex items-start gap-2 text-xs lg:text-sm">
+                    🔔 Some listings use AI-generated content and may have errors or bias. Please verify all details yourself.
+                  </div>
+                  <div className="flex items-start gap-2 text-xs lg:text-sm">
+                    🧐 Most jobs are data-related, but other roles or repeated listings may appear sometimes.
+                  </div>
+                </div>
+
+                {/* Navigation Tabs */}
+                <div className="flex gap-2 justify-start lg:justify-end bg-white rounded-lg p-1 px-2 w-fit">
+                  <Button
+                    onClick={() => setActiveTab('database')}
+                    variant={activeTab === 'database' ? 'default' : 'outline'}
+                    className={`px-3 sm:px-4 lg:px-5 py-2 rounded-lg text-xs sm:text-sm hover:bg-none! whitespace-nowrap ${activeTab === 'database'
+                        ? 'bg-datacareer-darkBlue text-white'
+                        : 'bg-transparent text-datacareer-darkBlue border-white'
+                      }`}
+                  >
+                    <span className="sm:inline">Job Database</span>
+                  </Button>
+                  <Button
+                    onClick={() => setActiveTab('tracker')}
+                    variant={activeTab === 'tracker' ? 'default' : 'outline'}
+                    className={`px-3 sm:px-4 lg:px-5 py-2 rounded-lg text-xs sm:text-sm hover:bg-none! whitespace-nowrap ${activeTab === 'tracker'
+                        ? 'bg-datacareer-darkBlue text-white'
+                        : 'bg-transparent text-datacareer-darkBlue border-white'
+                      }`}
+                  >
+                    <span className="sm:inline">Saved Jobs</span>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -868,7 +867,7 @@ const JobDatabase: React.FC = () => {
                   <span className="text-sm text-gray-600">Loading results…</span>
                 </div>
               )}
-              
+
               {/* Show mock data with blur overlay when trial expired */}
               {isTrialExpired ? (
                 <div className="relative">
@@ -886,12 +885,12 @@ const JobDatabase: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="blur-sm pointer-events-none">
                     <JobTable
                       jobs={mockJobs}
                       savedJobs={new Set()}
-                      onSaveJob={() => {}}
+                      onSaveJob={() => { }}
                       activeTab={activeTab}
                     />
                   </div>
@@ -968,11 +967,10 @@ const JobDatabase: React.FC = () => {
                     {pageNumbers.map((pageNum) => (
                       <button
                         key={pageNum}
-                        className={`min-w-[28px] h-7 px-2 text-sm rounded border ${
-                          pageNum === currentPage
+                        className={`min-w-[28px] h-7 px-2 text-sm rounded border ${pageNum === currentPage
                             ? 'bg-datacareer-darkBlue text-white border-datacareer-darkBlue'
                             : 'hover:bg-gray-50'
-                        }`}
+                          }`}
                         disabled={isLoading}
                         onClick={() => (activeTab === 'tracker' ? fetchSavedPage(pageNum) : fetchPage(currentDataset, pageNum))}
                       >

@@ -25,7 +25,7 @@ const Login = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (token) {
-      navigate('/', { replace: true });
+      navigate('/job-database', { replace: true });
     }
   }, [token, navigate]);
 
@@ -62,7 +62,7 @@ const Login = () => {
       toast.success('Logged in successfully!');
       
       // Use replace to prevent back navigation to login page
-      navigate('/', { replace: true });
+      navigate('/job-database', { replace: true });
     } catch (error: any) {
       // Handle specific trial errors from backend
       const errorMessage = error?.message || error as string;
@@ -70,11 +70,11 @@ const Login = () => {
       if (errorMessage === 'no-trial' || errorMessage.includes('No trial available')) {
         toast.error('No trial available for this device. Please purchase a subscription to continue.');
         // Still navigate to home, ProtectedRoute will show modal
-        navigate('/');
+        navigate('/job-database');
       } else if (errorMessage === 'trial-expired' || errorMessage.includes('Trial expired')) {
         toast.error('Your trial has expired. Please purchase a subscription to continue.');
         // Still navigate to home, ProtectedRoute will show modal
-      navigate('/');
+      navigate('/job-database');
       } else if (errorMessage.includes('Device ID is required')) {
         toast.error('Device ID is required. Please refresh the page and try again.');
       } else {

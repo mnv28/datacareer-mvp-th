@@ -134,9 +134,9 @@ const SettingsProfile: React.FC = () => {
                     id="email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    readOnly
+                    className="cursor-not-allowed bg-gray-100 text-gray-600"
                     placeholder="you@example.com"
-                    autoComplete="email"
                   />
                 </div>
 

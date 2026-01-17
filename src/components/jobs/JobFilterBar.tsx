@@ -611,7 +611,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                   Posted Date
                 </label>
-            
+
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -911,7 +911,7 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
 
       {/* Filter Row 2 - Text Inputs and Apply Button */}
       <div className="p-3 sm:p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {activeTab !== 'tracker' && (
             <>
               <div>
@@ -951,22 +951,19 @@ const JobFilterBar: React.FC<JobFilterBarProps> = ({
                   className="w-full"
                 />
               </div>
+
+              <div className="flex items-end justify-end">
+                <Button
+                  onClick={handleApplyFilters}
+                  disabled={!hasPendingChanges}
+                  className="w-full w-fit bg-datacareer-darkBlue text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Apply Filters
+                </Button>
+              </div>
             </>
           )}
         </div>
-
-        {/* Apply Button - only show here for database view; tracker shows inline */}
-        {activeTab !== 'tracker' && (
-          <div className="mt-4 flex justify-end">
-            <Button
-              onClick={handleApplyFilters}
-              disabled={!hasPendingChanges}
-              className="bg-datacareer-darkBlue text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Apply Filters
-            </Button>
-          </div>
-        )}
 
 
         {/* Download and Saved Filters Buttons */}
