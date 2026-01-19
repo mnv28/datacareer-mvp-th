@@ -30,14 +30,14 @@ const App = () => {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            
+
             {/* Payment redirect routes - minimal, just redirect */}
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/cancel" element={<PaymentCancel />} />
 
             {/* Protected routes */}
             <Route
-              path="/"
+              path="/sql-questions"
               element={
                 <ProtectedRoute>
                   <Index />
@@ -53,7 +53,7 @@ const App = () => {
               }
             />
             <Route
-              path="/job-database"
+              path="/"
               element={
                 <ProtectedRoute>
                   <JobDatabase />
@@ -88,9 +88,9 @@ const App = () => {
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-          <Toaster 
-            position="top-right" 
-            closeButton 
+          <Toaster
+            position="top-right"
+            closeButton
           />
         </Router>
       </SidebarProvider>

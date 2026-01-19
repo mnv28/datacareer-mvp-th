@@ -79,14 +79,14 @@ const QuestionDetail = () => {
   const [previousId, setPreviousId] = useState<number | null>(null);
   const [nextId, setNextId] = useState<number | null>(null);
   const [navigationLoading, setNavigationLoading] = useState<boolean>(false);
-console.log("submissions SubmissionsDisplay = ",submissions);
+  console.log("submissions SubmissionsDisplay = ", submissions);
 
   const fetchQuestionDetails = async () => {
     try {
       setLoading(true);
       const response = await apiInstance.get(`/api/question/${id}`);
       const data = response.data;
-console.log("data = data ",data);
+      console.log("data = data ", data);
 
       // Transform the question data
       const transformedQuestion: Question = {
@@ -215,7 +215,7 @@ console.log("data = data ",data);
       runtime: apiSubmission.runTime,
       query: apiSubmission.code,
       // Ensure result and error are correctly mapped
-      result: apiSubmission.result, 
+      result: apiSubmission.result,
       error: apiSubmission.error,
     };
 
@@ -244,7 +244,7 @@ console.log("data = data ",data);
         <div className="container mx-auto px-4 py-8 text-center">
           <h1 className="text-2xl font-bold text-red-500">Error loading question</h1>
           <p className="text-gray-600 mt-2">{error || "The question you're looking for doesn't exist or has been removed."}</p>
-          <Link to="/" className="mt-4 inline-block bg-datacareer-blue text-white px-4 py-2 rounded-lg hover:bg-datacareer-darkBlue transition-colors">
+          <Link to="/sql-questions" className="mt-4 inline-block bg-datacareer-blue text-white px-4 py-2 rounded-lg hover:bg-datacareer-darkBlue transition-colors">
             Return to Questions
           </Link>
         </div>

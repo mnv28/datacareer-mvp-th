@@ -25,7 +25,7 @@ const Login = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (token) {
-      navigate('/job-database', { replace: true });
+      navigate('/', { replace: true });
     }
   }, [token, navigate]);
 
@@ -47,7 +47,7 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Wait for device ID if still loading
     if (isLoadingDeviceId) {
       toast.error('Please wait, initializing device...');
@@ -56,25 +56,25 @@ const Login = () => {
 
     try {
       const result = await dispatch(login({ email, password, deviceId: deviceId || undefined })).unwrap();
-      
+
       // Always navigate to home after successful login
       // ProtectedRoute will handle access control based on trial status
       toast.success('Logged in successfully!');
-      
+
       // Use replace to prevent back navigation to login page
-      navigate('/job-database', { replace: true });
+      navigate('/', { replace: true });
     } catch (error: any) {
       // Handle specific trial errors from backend
       const errorMessage = error?.message || error as string;
-      
+
       if (errorMessage === 'no-trial' || errorMessage.includes('No trial available')) {
         toast.error('No trial available for this device. Please purchase a subscription to continue.');
         // Still navigate to home, ProtectedRoute will show modal
-        navigate('/job-database');
+        navigate('/');
       } else if (errorMessage === 'trial-expired' || errorMessage.includes('Trial expired')) {
         toast.error('Your trial has expired. Please purchase a subscription to continue.');
         // Still navigate to home, ProtectedRoute will show modal
-      navigate('/job-database');
+        navigate('/');
       } else if (errorMessage.includes('Device ID is required')) {
         toast.error('Device ID is required. Please refresh the page and try again.');
       } else {
