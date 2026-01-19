@@ -34,7 +34,6 @@ const getRandomColor = (name: string): string => {
 };
 
 export const CompanyLogo: React.FC<CompanyLogoProps> = ({ name, size = 'md', className = '', logo }) => {
-  console.log("logo-===", logo);
 
   const initials = getInitials(name);
   const bgColor = getRandomColor(name);

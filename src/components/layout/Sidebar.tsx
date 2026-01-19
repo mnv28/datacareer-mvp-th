@@ -215,9 +215,9 @@ const Sidebar: React.FC = () => {
                 <Icon className="h-5 w-5 flex-shrink-0" />
                 {!isCollapsed && (
                   <div className="flex flex-1 items-center justify-between min-w-0">
-                    <span className="text-sm font-medium truncate mr-2">{item.name}</span>
-                    <span className="text-[10px] font-medium bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 whitespace-nowrap">
-                      Soon
+                    <span className="text-sm font-medium mr-2">{item.name}</span>
+                    <span className="text-[9px] font-medium bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 whitespace-nowrap">
+                     Coming Soon
                     </span>
                   </div>
                 )}
