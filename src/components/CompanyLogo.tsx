@@ -27,31 +27,31 @@ const getRandomColor = (name: string): string => {
     'bg-yellow-500',
     'bg-teal-500',
   ];
-  
+
   // Use the company name to consistently generate the same color for the same company
   const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return colors[index % colors.length];
 };
 
 export const CompanyLogo: React.FC<CompanyLogoProps> = ({ name, size = 'md', className = '', logo }) => {
-  console.log("logo-===",logo );
-  
+  console.log("logo-===", logo);
+
   const initials = getInitials(name);
   const bgColor = getRandomColor(name);
 
   const sizeClasses = {
-    sm: 'w-6 h-6 text-xs',
+    sm: 'w-8 h-8 text-xs',
     md: 'w-8 h-8 text-sm',
     lg: 'w-10 h-10 text-base',
   };
 
   if (logo) {
     return (
-      <div className={`${sizeClasses[size]} rounded-full overflow-hidden ${className}`}>
-        <img 
-          src={logo} 
+      <div className={`${sizeClasses[size]} overflow-hidden ${className.includes('rounded') ? '' : 'rounded-full'} ${className}`}>
+        <img
+          src={logo}
           alt={`${name} logo`}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
         />
       </div>
     );

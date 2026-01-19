@@ -206,7 +206,7 @@ const SubscriptionSettings: React.FC = () => {
                       {isPro 
                         ? 'Pro Monthly' 
                         : isTrialLimitReached 
-                          ? 'Trial Expired' 
+                          ? 'On Trial' 
                           : (trialStatus === 'trial-active' ? 'Free Trial' : 'Free')
                       }
                     </p>

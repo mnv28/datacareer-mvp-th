@@ -228,15 +228,15 @@ function Index() {
   // Only show overlay when trial is explicitly expired, not during active trial
   const isTrialExpired = useMemo(() => {
     if (isPro) return false;
-    
+
     if (trialStatus === 'trial-expired') return true;
-    
+
     if (deviceTrialError !== null) return true;
-    
+
     if ((user as any)?.trialUsed === true && trialStatus !== 'trial-active') {
       return true;
     }
-    
+
     return false;
   }, [isPro, trialStatus, user, deviceTrialError]);
 
@@ -388,13 +388,13 @@ function Index() {
         if (!isMounted) return;
         const sub = resp?.subscription;
         const endDateStr = (sub as any)?.renewsOn ?? (sub as any)?.endDate ?? (sub as any)?.endsOn ?? null;
-        
+
         if (endDateStr) {
           const endDate = new Date(endDateStr);
           const now = new Date();
           const diffTime = endDate.getTime() - now.getTime();
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          
+
           // Only show warning when 3 days or less remaining
           if (diffDays >= 0 && diffDays <= 3) {
             setSubscriptionDaysLeft(diffDays);
@@ -447,7 +447,7 @@ function Index() {
   // Mock companies data for trial expired users
   const mockCompanies = useMemo(() => {
     if (!isTrialExpired) return [];
-    
+
     return [
       {
         id: 1,
@@ -632,8 +632,8 @@ function Index() {
                 Plan Expiring Soon
               </p>
               <p className="text-xs text-orange-800 mt-1">
-                {subscriptionDaysLeft === 0 
-                  ? 'Your plan expires today' 
+                {subscriptionDaysLeft === 0
+                  ? 'Your plan expires today'
                   : subscriptionDaysLeft === 1
                     ? '1 day left'
                     : `${subscriptionDaysLeft} days left`
@@ -653,23 +653,6 @@ function Index() {
             </p>
           </div>
 
-          {!deviceTrialError && trialStatus === 'trial-active' && (() => {
-            const info = getTrialInfo();
-            if (!info) return null;
-            return (
-              <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <p className="text-blue-900 font-medium">
-                    Trial Active
-                  </p>
-                  <p className="text-sm text-blue-800">
-                    Remaining: <span className="font-semibold">{info.remaining}</span> days
-                    {' '}• Used: <span className="font-semibold">{info.used}/{info.total}</span> days
-                  </p>
-                </div>
-              </div>
-            );
-          })()}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-4">
@@ -813,7 +796,7 @@ function Index() {
             {isTrialExpired ? (
               <div className="relative">
                 <div className="blur-sm pointer-events-none">
-                  <ProgressSummary 
+                  <ProgressSummary
                     total={50}
                     solved={12}
                     beginner={20}

@@ -78,6 +78,7 @@ const QuestionList: React.FC<QuestionListProps> = ({ companies }) => {
                     name={company.name}
                     size="sm"
                     logo={company.logo}
+                    className='rounded-md border border-gray-100 min-w-[24px]'
                   />
                   <div>
                     <span className="font-medium text-datacareer-darkBlue hover:text-datacareer-orange company-name">
@@ -119,7 +120,7 @@ const QuestionList: React.FC<QuestionListProps> = ({ companies }) => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 mt-2 md:mt-0 ml-7 md:ml-0">
-                    <span className={`text-xs px-2 py-0.5 border rounded ${getDifficultyBadgeClass(question.difficulty)}`}>
+                      <span className={`text-xs px-2 py-0.5 border rounded ${getDifficultyBadgeClass(question.difficulty)}`}>
                         {question.difficulty}
                       </span>
                       <span className="text-xs px-2 py-0.5 border rounded">
