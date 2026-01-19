@@ -289,8 +289,6 @@ const JobTable: React.FC<JobTableProps> = ({ jobs, savedJobs, onSaveJob, activeT
 
   const getDetailBadgeColor = (detail: string) => {
     const lowerDetail = detail.toLowerCase();
-    console.log("lowerDetail => ", lowerDetail);
-    
     if (lowerDetail.includes('data engineer') || lowerDetail.includes('data analyst')) {
       // return 'bg-green-100 text-green-800 border-green-200';
       return 'bg-[#d4edbc] text-[#1e300d] border-[#d4edbc]';
