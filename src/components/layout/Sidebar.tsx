@@ -210,14 +210,14 @@ const Sidebar: React.FC = () => {
             return (
               <div
                 key={item.name}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 cursor-not-allowed ${isCollapsed ? 'justify-center' : 'justify-start'}`}
+                className={`flex items-start gap-3 px-3 py-2.5 rounded-lg text-gray-400 cursor-not-allowed ${isCollapsed ? 'justify-center' : 'justify-start'}`}
               >
-                <Icon className="h-5 w-5 flex-shrink-0" />
+                <Icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
                 {!isCollapsed && (
-                  <div className="flex flex-1 items-center justify-between min-w-0">
-                    <span className="text-sm font-medium mr-2">{item.name}</span>
-                    <span className="text-[9px] font-medium bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 whitespace-nowrap">
-                     Coming Soon
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className="text-sm font-medium leading-tight">{item.name}</span>
+                    <span className="text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 w-fit">
+                      Coming Soon
                     </span>
                   </div>
                 )}
