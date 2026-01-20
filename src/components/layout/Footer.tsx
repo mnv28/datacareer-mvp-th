@@ -52,9 +52,6 @@ const Footer = () => {
         <div className="border-t border-gray-200 mt-8 pt-4 text-center text-xs text-gray-500">
           © {new Date().getFullYear()} Datacareer.app. All rights reserved.
         </div>
-        <div className="border-gray-200 mt-2 pt-2 text-center text-xs text-gray-500">
-          Designed and Developed with ❤️ by Techifyhouse.
-        </div>
       </div>
     </footer>
   );
