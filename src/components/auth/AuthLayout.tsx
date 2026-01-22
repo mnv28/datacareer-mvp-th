@@ -68,7 +68,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({
 
       {/* Footer */}
       <div className="py-4 text-center text-sm text-gray-500">
-        © {new Date().getFullYear()} DataCareer. All rights reserved.
+        © {new Date().getFullYear()} datacareer.app All rights reserved.
       </div>
     </div>
   );
