@@ -5,9 +5,10 @@ import QuestionList from '@/components/questions/QuestionList';
 import ProgressSummary from '@/components/questions/ProgressSummary';
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { paymentService } from "@/redux/services/payment";
-import { ChevronDown, CheckCircle2, XCircle, MinusCircle, AlertTriangle, CreditCard, Loader2 } from 'lucide-react';
+import { ChevronDown, CheckCircle2, XCircle, MinusCircle, AlertTriangle, CreditCard, Loader2, Info } from 'lucide-react';
 import { Company, Question } from "@/components/questions/QuestionList"; // Import types
 import { apiInstance } from "@/api/axiosApi";
 import { useAppSelector } from '@/redux/hooks';
@@ -223,6 +224,7 @@ function Index() {
   const [selectedDomains, setSelectedDomains] = useState<number[]>([]);
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
   const [selectedVariants, setSelectedVariants] = useState<string[]>([]);
+  const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
 
   // Check if trial is expired (not Pro and trial actually expired)
   // Only show overlay when trial is explicitly expired, not during active trial
@@ -291,8 +293,6 @@ function Index() {
 
         const data = response.data;
 
-        // Backend currently returns `isPaid` at top-level (user plan/access flag),
-        // while `QuestionList` expects `question.isPaid` for the Paid/Free badge.
         const userIsPaidFlagRaw = (data as any)?.isPaid;
         const userIsPaidFlag =
           userIsPaidFlagRaw === true ||
@@ -646,11 +646,23 @@ function Index() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col gap-2 justify-between items-center sm:flex-row">
-          <div>
-            <h1 className="text-2xl font-bold text-datacareer-darkBlue mb-2">SQL Interview Questions</h1>
-            <p className="text-gray-600">
-              Practice SQL interview questions from top tech companies
-            </p>
+          <div className="flex items-start gap-3">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <h1 className="text-2xl font-bold text-datacareer-darkBlue">SQL Interview Questions</h1>
+                <button
+                  onClick={() => setShowDisclaimerModal(true)}
+                  className="text-datacareer-blue hover:text-datacareer-darkBlue transition-colors p-1 rounded-full hover:bg-blue-50"
+                  aria-label="Data Disclaimer"
+                  title="Data Disclaimer"
+                >
+                  <Info className="h-5 w-5" />
+                </button>
+              </div>
+              <p className="text-gray-600">
+                Practice SQL interview questions from top tech companies
+              </p>
+            </div>
           </div>
 
         </div>
@@ -822,6 +834,63 @@ function Index() {
           </div>
         </div>
       </div>
+
+      {/* Data Disclaimer Modal */}
+      <Dialog open={showDisclaimerModal} onOpenChange={setShowDisclaimerModal}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-datacareer-darkBlue">
+              Data Disclaimer
+            </DialogTitle>
+            <DialogDescription className="text-base pt-2">
+              IMPORTANT NOTICE
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4 space-y-4 text-sm text-gray-700">
+            <p>
+              All data generated in this project is entirely <strong>synthetic and fictitious</strong>. The datasets, customer records and all associated information have been artificially created for <strong>educational and analytical purposes only</strong>.
+            </p>
+
+            <p>
+              This synthetic data does not represent, reflect, or derive from any actual data, operations, customers, employees, or business practices of these companies or any other real organization. Any resemblance to actual persons, businesses, events, or data is <strong>purely coincidental</strong>.
+            </p>
+
+            <p>
+              The scenarios, business problems, and analytical insights presented are hypothetical examples designed to demonstrate data analytics techniques and SQL querying skills in the context of the energy and utilities industry.
+            </p>
+
+            <div className="mt-6">
+              <h3 className="font-semibold text-gray-900 mb-2">This project is intended solely for:</h3>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>Educational purposes</li>
+                <li>Skills development</li>
+                <li>Portfolio demonstration</li>
+                <li>Learning data analytics methodologies</li>
+              </ul>
+            </div>
+
+            <div className="mt-6">
+              <h3 className="font-semibold text-gray-900 mb-2">Users should not:</h3>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>Use this data for any commercial purposes</li>
+                <li>Make business decisions based on these synthetic datasets</li>
+                <li>Assume any correlation with real-world companies operations or data</li>
+                <li>Redistribute this data claiming it represents actual company information</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <Button
+              onClick={() => setShowDisclaimerModal(false)}
+              className="bg-datacareer-blue hover:bg-datacareer-darkBlue text-white"
+            >
+              Understood
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }
